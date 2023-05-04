@@ -22,3 +22,11 @@ Para instalar as dependências do projeto, execute o seguinte comando:
 ```bash
 pip install -r requirements.txt
 ```
+
+## Formatação do código
+
+Para formatar o código, execute o seguinte comando:
+
+```bash
+black .
+```
