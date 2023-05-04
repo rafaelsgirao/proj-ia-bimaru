@@ -23,6 +23,14 @@ Para instalar as dependências do projeto, execute o seguinte comando:
 pip install -r requirements.txt
 ```
 
+## Execução do programa
+
+Para executar o programa, execute o seguinte comando:
+
+```bash
+python3 src/bimaru.py < <instance_file>
+```
+
 ## Formatação do código
 
 Para formatar o código, execute o seguinte comando:
