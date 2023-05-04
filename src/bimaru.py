@@ -7,6 +7,7 @@
 # 00000 Nome2
 
 import sys
+from sys import stdin
 from search import (
     Problem,
     Node,
@@ -35,6 +36,21 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
+    class Position:
+        """Representação interna de uma posição do tabuleiro."""
+
+        def __init__(self, x: int, y: int, value: str, default=False) -> None:
+            self.x = x
+            self.y = y
+            self.value = value
+            self.default = default
+
+        def __str__(self) -> str:
+            if self.default:
+                return self.value.upper()
+            else:
+                return self.value
+
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
         # TODO
@@ -55,15 +71,11 @@ class Board:
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
-        e retorna uma instância da classe Board.
+        e retorna uma instância da classe Board."""
 
-        Por exemplo:
-            $ python3 bimaru.py < input_T01
+        line = stdin.readline().split()
+        print(line)
 
-            > from sys import stdin
-            > line = stdin.readline().split()
-        """
-        # TODO
         pass
 
     # TODO: outros metodos da classe
@@ -107,6 +119,8 @@ class Bimaru(Problem):
 if __name__ == "__main__":
     # TODO:
     # Ler o ficheiro do standard input,
+    board = Board.parse_instance()
+
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
