@@ -39,7 +39,7 @@ class Board:
     class Position:
         """Representação interna de uma posição do tabuleiro."""
 
-        def __init__(self, x: int, y: int, value: str, default=False) -> None:
+        def __init__(self, x: int, y: int, value: str, default) -> None:
             self.x = x
             self.y = y
             self.value = value
@@ -51,32 +51,63 @@ class Board:
             else:
                 return self.value
 
+    rows_count = []
+    cols_count = []
+    positions = [[]]
+
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        # TODO
-        pass
+        return self.positions[row][col].value
 
-    def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
+    def adjacent_vertical_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        # TODO
-        pass
+        return (self.positions[row - 1][col].value, self.positions[row + 1][col].value)
 
-    def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
+    def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        # TODO
-        pass
+        return (self.positions[row][col - 1].value, self.positions[row][col + 1].value)
+
+    def print(self):
+        for row in range(len(self.positions)):
+            for col in range(len(self.positions[row])):
+                print(self.positions[row][col], end=" ")
+            print()
 
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
         e retorna uma instância da classe Board."""
+        new_board = Board()
 
+        # read rows
         line = stdin.readline().split()
-        print(line)
+        new_board.rows_count = [int(x) for x in line[0 : len(line)] if x != "ROW"]
+        rows = len(new_board.rows_count)
 
-        pass
+        # read columns
+        line = stdin.readline().split()
+        new_board.cols_count = [int(x) for x in line[0 : len(line)] if x != "COLUMN"]
+        columns = len(new_board.cols_count)
+
+        # init the board
+        for row in range(rows):
+            new_board.positions.append([])
+            for col in range(columns):
+                new_board.positions[row].append(Board.Position(row, col, ".", False))
+
+        # add hints
+        hint_total = int(stdin.readline())
+        for hint in range(hint_total):
+            line = stdin.readline().split()
+            row = int(line[1])
+            col = int(line[2])
+            value = line[3]
+            new_board.positions[row][col].value = value
+            new_board.positions[row][col].default = True
+
+        return new_board
 
     # TODO: outros metodos da classe
 
@@ -120,7 +151,7 @@ if __name__ == "__main__":
     # TODO:
     # Ler o ficheiro do standard input,
     board = Board.parse_instance()
-
+    board.print()
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
