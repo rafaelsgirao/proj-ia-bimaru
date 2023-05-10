@@ -125,8 +125,10 @@ class Bimaru(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
-        # TODO
-        pass
+        # Only check if all rows and columns are filled:
+        # More profound checks should be done before/when filling positions.
+
+        return np.all(state.board.cols == 0) and np.all(state.board.rows == 0)
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
