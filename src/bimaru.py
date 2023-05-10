@@ -82,11 +82,11 @@ class Board:
 
         # read rows
         line = stdin.readline().split()
-        board.rows = [int(x) for x in line if x != "ROW"]
+        board.rows = np.array([int(x) for x in line if x != "ROW"])
 
         # read columns
         line = stdin.readline().split()
-        board.cols = [int(x) for x in line if x != "COLUMN"]
+        board.cols = np.array([int(x) for x in line if x != "COLUMN"])
         # add hints
         hint_total = int(stdin.readline())
         for _ in range(hint_total):
