@@ -2,12 +2,14 @@
 # Devem alterar as classes e funções neste ficheiro de acordo com as instruções do enunciado.
 # Além das funções e classes já definidas, podem acrescentar outras que considerem pertinentes.
 
-# Grupo 00:
-# 00000 Nome1
-# 00000 Nome2
+# Grupo 32:
+# 99309 Rafael Girão
+# 104147 Guilherme Marcondes
 
-import sys
+
+import numpy as np
 from sys import stdin
+
 from search import (
     Problem,
     Node,
@@ -39,75 +41,62 @@ class Board:
     class Position:
         """Representação interna de uma posição do tabuleiro."""
 
-        def __init__(self, x: int, y: int, value: str, default) -> None:
-            self.x = x
-            self.y = y
+        def __init__(self, value: str, hint=False) -> None:
             self.value = value
-            self.default = default
+            self.hint = hint
 
         def __str__(self) -> str:
-            if self.default:
-                return self.value.upper()
-            else:
-                return self.value
+            return self.value.upper() if self.hint else self.value
 
-    rows_count = []
-    cols_count = []
-    positions = [[]]
+        def __repr__(self) -> str:
+            return self.__str__()
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.positions[row][col].value
+        return self.array[row][col].value
 
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        return (self.positions[row - 1][col].value, self.positions[row + 1][col].value)
+        return (self.array[row - 1][col].value, self.array[row + 1][col].value)
 
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        return (self.positions[row][col - 1].value, self.positions[row][col + 1].value)
+        return (self.array[row][col - 1].value, self.array[row][col + 1].value)
 
     def print(self):
-        for row in range(len(self.positions)):
-            for col in range(len(self.positions[row])):
-                print(self.positions[row][col], end=" ")
+        for row in range(len(self.array)):
+            for col in range(len(self.array[row])):
+                print(self.array[row][col], end=" ")
             print()
 
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
         e retorna uma instância da classe Board."""
-        new_board = Board()
+        board = Board()
+
+        # Numpy array
+        board.array = np.full((10, 10), Board.Position(value="."))
 
         # read rows
         line = stdin.readline().split()
-        new_board.rows_count = [int(x) for x in line[0 : len(line)] if x != "ROW"]
-        rows = len(new_board.rows_count)
+        board.rows = [int(x) for x in line if x != "ROW"]
 
         # read columns
         line = stdin.readline().split()
-        new_board.cols_count = [int(x) for x in line[0 : len(line)] if x != "COLUMN"]
-        columns = len(new_board.cols_count)
-
-        # init the board
-        for row in range(rows):
-            new_board.positions.append([])
-            for col in range(columns):
-                new_board.positions[row].append(Board.Position(row, col, ".", False))
-
+        board.cols = [int(x) for x in line if x != "COLUMN"]
         # add hints
         hint_total = int(stdin.readline())
-        for hint in range(hint_total):
+        for _ in range(hint_total):
             line = stdin.readline().split()
             row = int(line[1])
             col = int(line[2])
             value = line[3]
-            new_board.positions[row][col].value = value
-            new_board.positions[row][col].default = True
+            board.array[row][col] = Board.Position(value, hint=True)
 
-        return new_board
+        return board
 
     # TODO: outros metodos da classe
 
