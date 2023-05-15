@@ -65,22 +65,32 @@ class Board:
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.array[row][col].value
+        return self.hint_positions[row][col].value
 
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        return (self.array[row - 1][col].value, self.array[row + 1][col].value)
+        return (self.hint_positions[row - 1][col].value, self.hint_positions[row + 1][col].value)
 
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        return (self.array[row][col - 1].value, self.array[row][col + 1].value)
+        return (self.hint_positions[row][col - 1].value, self.hint_positions[row][col + 1].value)
+
+    def diagonal_values(self, row: int, col: int) -> (str, str, str, str):  # type: ignore
+        """Devolve os valores nas quatro posições diagonais,
+        respectivamente."""
+        return (
+            self.hint_positions[row - 1][col - 1].value,
+            self.hint_positions[row - 1][col + 1].value,
+            self.hint_positions[row + 1][col - 1].value,
+            self.hint_positions[row + 1][col + 1].value,
+        )
 
     def print(self):
-        for row in range(len(self.array)):
-            for col in range(len(self.array[row])):
-                print(self.array[row][col], end=" ")
+        for row in range(len(self.positions)):
+            for col in range(len(self.positions[row])):
+                print(self.positions[row][col], end=" ")
             print()
 
     @staticmethod
@@ -90,7 +100,8 @@ class Board:
         board = Board()
 
         # Numpy array
-        board.array = np.full((10, 10), Board.Empty())
+        board.hint_positions = np.full((10, 10), Board.Empty())
+        board.positions = np.full((10, 10), 0)
 
         # read rows
         line = stdin.readline().split()
@@ -99,6 +110,7 @@ class Board:
         # read columns
         line = stdin.readline().split()
         board.cols = np.array([int(x) for x in line if x != "COLUMN"])
+
         # add hints
         hint_total = int(stdin.readline())
         for _ in range(hint_total):
@@ -106,11 +118,32 @@ class Board:
             row = int(line[1])
             col = int(line[2])
             value = line[3]
-            board.array[row][col] = Board.Position(value, hint=True)
+            board.hint_positions[row][col] = Board.Position(value, hint=True)
 
         return board
 
-    # TODO: outros metodos da classe
+    def matrix_conflicts_with_hints(self, matrix) -> bool:
+        """Verifica se uma matriz de posições do tabuleiro é válida, isto é,
+        se não viola as restrições impostas pelos valores das pistas."""
+        
+        boat = []
+        for (row, col), _ in np.ndenumerate(matrix):
+            if matrix[row][col] == 1:
+                boat.append((row, col))
+            if len(boat) == 4:
+                break
+        
+        boat_size = len(boat)
+
+        if boat_size == 1:
+            row, col = boat[0]
+            adjacent_values = self.adjacent_vertical_values(row, col) + self.adjacent_horizontal_values(row, col) + self.diagonal_values(row, col)
+            if not all(value == Board.Empty() for value in adjacent_values):
+                return False
+            return self.hint_positions[row][col] == Board.Empty() or self.hint_positions[row][col].value == "C"
+
+        return True
+            
 
 
 class Bimaru(Problem):
@@ -123,10 +156,7 @@ class Bimaru(Problem):
 
     possible_matrices = {}
 
-    @staticmethod
-    def gen_matrices_1(hint):
-        # Todo: use hint to filter matrices
-        #     m = np.array([])
+    def gen_matrices_1(self):
         m = []
         dumb = np.zeros((10, 10))
         for (row, col), _ in np.ndenumerate(dumb):
@@ -137,26 +167,37 @@ class Bimaru(Problem):
             m.append(new_matrix)
         return m
 
-    @staticmethod
-    def gen_matrices(n, hints=False):
+    def gen_matrices(self, n):
         m = []
 
         for (row, col), _ in np.ndenumerate(np.zeros((10, 10 - n + 1))):
             new_matrix = np.zeros((10, 10))
             for i in range(n):
                 new_matrix[row, col + i] = 1
+                # if self.board.insertion_conflicts_with_hints(row, col + i):
+                    #should_continue = True
+                    #break
+            #if should_continue:
+                #continue
             m.append(new_matrix)
 
         another_m = [mx.transpose() for mx in m] if n > 1 else []
 
         another_m.extend(m)
-        return another_m
 
-    def gen_possible_matrices(self, hint):
-        self.possible_matrices[1] = self.gen_matrices_1(hint)
-        self.possible_matrices[2] = self.gen_matrices(2, hint)
-        self.possible_matrices[3] = self.gen_matrices(3, hint)
-        self.possible_matrices[4] = self.gen_matrices(4, hint)
+        final = []
+
+        for matrix in another_m:
+            if self.board.matrix_conflicts_with_hints(matrix):
+                final.append(matrix)
+
+        return final
+
+    def gen_possible_matrices(self):
+        self.possible_matrices[1] = self.gen_matrices_1()
+        self.possible_matrices[2] = self.gen_matrices(2)
+        self.possible_matrices[3] = self.gen_matrices(3)
+        self.possible_matrices[4] = self.gen_matrices(4)
 
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
@@ -206,6 +247,7 @@ if __name__ == "__main__":
     board = Board.parse_instance()
     board.print()
     problem = Bimaru(board)
+    print(problem.gen_matrices(1))
     initial_state = BimaruState(board)
 
     # Usar uma técnica de procura para resolver a instância,
