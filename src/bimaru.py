@@ -90,7 +90,7 @@ class Board:
         board = Board()
 
         # Numpy array
-        board.hints = np.full((10, 10), Board.Empty())
+        board.array = np.full((10, 10), Board.Empty())
 
         # read rows
         line = stdin.readline().split()
@@ -121,12 +121,7 @@ class Bimaru(Problem):
 
     possible_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
-    possible_matrices = {
-        4: [
-            "lista de matrizes com todas as m \
-        aneiras diferentes de colocar barcos de tamanho 4"
-        ]
-    }
+    possible_matrices = {}
 
     @staticmethod
     def gen_matrices_1(hint):
@@ -154,13 +149,14 @@ class Bimaru(Problem):
 
         another_m = [mx.transpose() for mx in m] if n > 1 else []
 
-        #   return np.concatenate(m, another_m)
-
         another_m.extend(m)
         return another_m
 
-    def gen_possible_ships(self):
-        size_1 = np.array()
+    def gen_possible_matrices(self, hint):
+        self.possible_matrices[1] = self.gen_matrices_1(hint)
+        self.possible_matrices[2] = self.gen_matrices(2, hint)
+        self.possible_matrices[3] = self.gen_matrices(3, hint)
+        self.possible_matrices[4] = self.gen_matrices(4, hint)
 
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
@@ -205,17 +201,11 @@ class Bimaru(Problem):
 
         return s <= 1
 
-    # TODO: outros metodos da classe
-
 
 if __name__ == "__main__":
-    pass
-    # TODO:
-    # Ler o ficheiro do standard input,
     board = Board.parse_instance()
     board.print()
     problem = Bimaru(board)
-
     initial_state = BimaruState(board)
 
     # Usar uma técnica de procura para resolver a instância,
