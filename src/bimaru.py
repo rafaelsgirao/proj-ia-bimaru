@@ -65,26 +65,39 @@ class Board:
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
+
+        if row < 0 or row > 9 or col < 0 or col > 9:
+            return Board.Empty()
+
         return self.hint_positions[row][col].value
 
     def adjacent_vertical_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        return (self.hint_positions[row - 1][col].value, self.hint_positions[row + 1][col].value)
+
+        return (
+            self.get_value(row - 1, col),
+            self.get_value(row + 1, col),
+        )
 
     def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):  # type: ignore
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        return (self.hint_positions[row][col - 1].value, self.hint_positions[row][col + 1].value)
+
+        return (
+            self.get_value(row, col - 1),
+            self.get_value(row, col + 1),
+        )
 
     def diagonal_values(self, row: int, col: int) -> (str, str, str, str):  # type: ignore
         """Devolve os valores nas quatro posições diagonais,
         respectivamente."""
+
         return (
-            self.hint_positions[row - 1][col - 1].value,
-            self.hint_positions[row - 1][col + 1].value,
-            self.hint_positions[row + 1][col - 1].value,
-            self.hint_positions[row + 1][col + 1].value,
+            self.get_value(row - 1, col - 1),
+            self.get_value(row - 1, col + 1),
+            self.get_value(row + 1, col - 1),
+            self.get_value(row + 1, col + 1),
         )
 
     def print(self):
@@ -125,25 +138,57 @@ class Board:
     def matrix_conflicts_with_hints(self, matrix) -> bool:
         """Verifica se uma matriz de posições do tabuleiro é válida, isto é,
         se não viola as restrições impostas pelos valores das pistas."""
-        
+
         boat = []
         for (row, col), _ in np.ndenumerate(matrix):
             if matrix[row][col] == 1:
                 boat.append((row, col))
             if len(boat) == 4:
                 break
-        
+
         boat_size = len(boat)
 
         if boat_size == 1:
             row, col = boat[0]
-            adjacent_values = self.adjacent_vertical_values(row, col) + self.adjacent_horizontal_values(row, col) + self.diagonal_values(row, col)
+            adjacent_values = (
+                self.adjacent_vertical_values(row, col)
+                + self.adjacent_horizontal_values(row, col)
+                + self.diagonal_values(row, col)
+            )
             if not all(value == Board.Empty() for value in adjacent_values):
                 return False
-            return self.hint_positions[row][col] == Board.Empty() or self.hint_positions[row][col].value == "C"
+            return (
+                self.hint_positions[row][col] == Board.Empty()
+                or self.hint_positions[row][col].value == "C"
+            )
+
+        for row, col in boat:
+            v = self.hint_positions[row][col].value
+            if v != Board.Empty():
+                if v == "C" or v == "W":
+                    return False
+                if v == "B":
+                    if (row > 0 and matrix[row - 1][col] != 1) or (
+                        row < 9 and matrix[row + 1][col] != 0
+                    ):
+                        return False
+                if v == "T":
+                    if (row > 0 and matrix[row - 1][col] != 0) or (
+                        row < 9 and matrix[row + 1][col] != 1
+                    ):
+                        return False
+                if v == "L":
+                    if (col > 0 and matrix[row][col - 1] != 1) or (
+                        col < 9 and matrix[row][col + 1] != 0
+                    ):
+                        return False
+                if v == "R":
+                    if (col > 0 and matrix[row][col - 1] != 0) or (
+                        col < 9 and matrix[row][col + 1] != 1
+                    ):
+                        return False
 
         return True
-            
 
 
 class Bimaru(Problem):
@@ -175,10 +220,10 @@ class Bimaru(Problem):
             for i in range(n):
                 new_matrix[row, col + i] = 1
                 # if self.board.insertion_conflicts_with_hints(row, col + i):
-                    #should_continue = True
-                    #break
-            #if should_continue:
-                #continue
+                # should_continue = True
+                # break
+            # if should_continue:
+            # continue
             m.append(new_matrix)
 
         another_m = [mx.transpose() for mx in m] if n > 1 else []
@@ -188,7 +233,7 @@ class Bimaru(Problem):
         final = []
 
         for matrix in another_m:
-            if self.board.matrix_conflicts_with_hints(matrix):
+            if not self.board.matrix_conflicts_with_hints(matrix):
                 final.append(matrix)
 
         return final
