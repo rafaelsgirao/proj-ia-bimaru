@@ -20,6 +20,8 @@ from search import (
     recursive_best_first_search,
 )
 
+BOARD_SIZE = (10, 10)
+
 
 class BimaruState:
     state_id = 0
