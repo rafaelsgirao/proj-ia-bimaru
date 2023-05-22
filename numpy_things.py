@@ -1,8 +1,12 @@
 import numpy as np
 from sys import exit
 
+"""
+Verifica se ambas as matrizes estão em conflito ou se podem coexistir.
+"""
 
-def calc_adjacent_sum(m1, m2):
+
+def matrices_in_conflict(m1, m2):
     m_sums = np.empty_like(m1)
     m2_pad = np.pad(m2, pad_width=1, mode="constant", constant_values=0)
     #  print(m2_pad)
@@ -15,8 +19,7 @@ def calc_adjacent_sum(m1, m2):
         print("---")
         m_sums[i, j] = np.sum(m2_around_point * m_filter) * m1[i, j] + m1[i, j]
 
-    return np.any(m_sums > 1)  # rg FIXME acabar esta condicao
-    return m_sums
+    return np.any(m_sums > 1)
 
 
 # m1 e m2 sem conflito
