@@ -115,7 +115,7 @@ class Board:
         board = Board()
 
         # Numpy array
-        board.hint_positions = np.full((10, 10), Board.Empty())
+        board.hint_positions = np.full((10 + 2, 10 + 2), 1)
         board.positions = np.full((10, 10), 0)
 
         # read rows
@@ -130,11 +130,44 @@ class Board:
         hint_total = int(stdin.readline())
         for _ in range(hint_total):
             line = stdin.readline().split()
-            row = int(line[1])
-            col = int(line[2])
+            row = int(line[1]) + 1
+            col = int(line[2]) + 1
             value = line[3]
-            board.hint_positions[row][col] = Board.Position(value, hint=True)
 
+            if value == "C":
+                board.hint_positions[row - 1 : row + 2, col - 1 : col + 2] = 0
+                board.hint_positions[row, col] = 1
+            elif value == "B":
+                board.hint_positions[row - 2 : row + 1, col - 1] = 0
+                board.hint_positions[row - 2 : row + 1, col + 1] = 0
+                board.hint_positions[row + 1, col - 1 : col + 2] = 0
+                board.hint_positions[row, col] = 1
+            elif value == "T":
+                board.hint_positions[row : row + 2, col - 1] = 0
+                board.hint_positions[row : row + 2, col + 1] = 0
+                board.hint_positions[row - 1, col - 1 : col + 1] = 0
+                board.hint_positions[row, col] = 1
+            elif value == "L":
+                board.hint_positions[row - 1 : row + 2, col - 1] = 0
+                board.hint_positions[row + 1, col - 1 : col + 3] = 0
+                board.hint_positions[row - 1, col - 1 : col + 3] = 0
+                board.hint_positions[row, col] = 1
+            elif value == "R":
+                board.hint_positions[row - 1 : row + 2, col + 1] = 0
+                board.hint_positions[row + 1, col - 2 : col + 1] = 0
+                board.hint_positions[row - 1, col - 2 : col + 1] = 0
+                board.hint_positions[row, col] = 1
+            elif value == "W":
+                board.hint_positions[row, col] = 0
+
+            elif value == "M":
+                board.hint_positions[row - 1, col - 1] = 0
+                board.hint_positions[row - 1, col + 1] = 0
+
+                board.hint_positions[row + 1, col - 1] = 0
+                board.hint_positions[row + 1, col + 1] = 0
+        # Remove padding
+        board.hint_positions = board.hint_positions[1:-1, 1:-1]
         return board
 
     def matrix_conflicts_with_hints(self, matrix) -> bool:
@@ -292,10 +325,11 @@ class Bimaru(Problem):
 
 if __name__ == "__main__":
     board = Board.parse_instance()
-    board.print()
-    problem = Bimaru(board)
-    print(problem.gen_matrices(1))
-    initial_state = BimaruState(board)
+    print(board.hint_positions)
+    print(board.hint_positions.shape)
+    # problem = Bimaru(board)
+    # print(problem.gen_matrices(1))
+    # initial_state = BimaruState(board)
 
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
