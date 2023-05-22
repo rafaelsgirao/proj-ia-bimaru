@@ -40,68 +40,6 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
-    class Position:
-        """Representação interna de uma posição do tabuleiro."""
-
-        def __init__(self, value: str, hint=False) -> None:
-            self.value = value
-            self.hint = hint
-
-        def __str__(self) -> str:
-            return self.value.upper() if self.hint else self.value
-
-        def __repr__(self) -> str:
-            return self.__str__()
-
-    # Singleton.
-    class Empty(Position):
-        instance = None
-
-        def __init__(self):
-            super().__init__(".")
-
-            if Board.Empty.instance:
-                return
-            Board.Empty.instance = self
-            Board.Empty.__new__ = lambda _: Board.Empty.instance
-
-    def get_value(self, row: int, col: int) -> str:
-        """Devolve o valor na respetiva posição do tabuleiro."""
-
-        if row < 0 or row > 9 or col < 0 or col > 9:
-            return Board.Empty()
-
-        return self.hint_positions[row][col].value
-
-    def adjacent_vertical_values(self, row: int, col: int) -> (str, str):  # type: ignore
-        """Devolve os valores imediatamente acima e abaixo,
-        respectivamente."""
-
-        return (
-            self.get_value(row - 1, col),
-            self.get_value(row + 1, col),
-        )
-
-    def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):  # type: ignore
-        """Devolve os valores imediatamente à esquerda e à direita,
-        respectivamente."""
-
-        return (
-            self.get_value(row, col - 1),
-            self.get_value(row, col + 1),
-        )
-
-    def diagonal_values(self, row: int, col: int) -> (str, str, str, str):  # type: ignore
-        """Devolve os valores nas quatro posições diagonais,
-        respectivamente."""
-
-        return (
-            self.get_value(row - 1, col - 1),
-            self.get_value(row - 1, col + 1),
-            self.get_value(row + 1, col - 1),
-            self.get_value(row + 1, col + 1),
-        )
-
     def print(self):
         for row in range(len(self.positions)):
             for col in range(len(self.positions[row])):
@@ -111,11 +49,9 @@ class Board:
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
-        e retorna uma instância da classe Board."""
+        e retorna uma instância da classe board."""
         board = Board()
 
-        # Numpy array
-        board.hint_positions = np.full((10 + 2, 10 + 2), 1)
         board.positions = np.full((10, 10), 0)
 
         # read rows
@@ -126,6 +62,19 @@ class Board:
         line = stdin.readline().split()
         board.cols = np.array([int(x) for x in line if x != "COLUMN"])
 
+        return board
+
+
+class Bimaru(Problem):
+    def __init__(self, board: Board):
+        """O construtor especifica o estado inicial."""
+        self.board = board
+        self.parse_hints()
+        # TODO
+
+    def parse_hints(self):
+        # Numpy array
+        self.hint_positions = np.full((10 + 2, 10 + 2), 1)
         # add hints
         hint_total = int(stdin.readline())
         for _ in range(hint_total):
@@ -135,102 +84,39 @@ class Board:
             value = line[3]
 
             if value == "C":
-                board.hint_positions[row - 1 : row + 2, col - 1 : col + 2] = 0
-                board.hint_positions[row, col] = 1
+                self.hint_positions[row - 1 : row + 2, col - 1 : col + 2] = 0
+                self.hint_positions[row, col] = 1
             elif value == "B":
-                board.hint_positions[row - 2 : row + 1, col - 1] = 0
-                board.hint_positions[row - 2 : row + 1, col + 1] = 0
-                board.hint_positions[row + 1, col - 1 : col + 2] = 0
-                board.hint_positions[row, col] = 1
+                self.hint_positions[row - 2 : row + 1, col - 1] = 0
+                self.hint_positions[row - 2 : row + 1, col + 1] = 0
+                self.hint_positions[row + 1, col - 1 : col + 2] = 0
+                self.hint_positions[row, col] = 1
             elif value == "T":
-                board.hint_positions[row : row + 2, col - 1] = 0
-                board.hint_positions[row : row + 2, col + 1] = 0
-                board.hint_positions[row - 1, col - 1 : col + 1] = 0
-                board.hint_positions[row, col] = 1
+                self.hint_positions[row : row + 2, col - 1] = 0
+                self.hint_positions[row : row + 2, col + 1] = 0
+                self.hint_positions[row - 1, col - 1 : col + 1] = 0
+                self.hint_positions[row, col] = 1
             elif value == "L":
-                board.hint_positions[row - 1 : row + 2, col - 1] = 0
-                board.hint_positions[row + 1, col - 1 : col + 3] = 0
-                board.hint_positions[row - 1, col - 1 : col + 3] = 0
-                board.hint_positions[row, col] = 1
+                self.hint_positions[row - 1 : row + 2, col - 1] = 0
+                self.hint_positions[row + 1, col - 1 : col + 3] = 0
+                self.hint_positions[row - 1, col - 1 : col + 3] = 0
+                self.hint_positions[row, col] = 1
             elif value == "R":
-                board.hint_positions[row - 1 : row + 2, col + 1] = 0
-                board.hint_positions[row + 1, col - 2 : col + 1] = 0
-                board.hint_positions[row - 1, col - 2 : col + 1] = 0
-                board.hint_positions[row, col] = 1
+                self.hint_positions[row - 1 : row + 2, col + 1] = 0
+                self.hint_positions[row + 1, col - 2 : col + 1] = 0
+                self.hint_positions[row - 1, col - 2 : col + 1] = 0
+                self.hint_positions[row, col] = 1
             elif value == "W":
-                board.hint_positions[row, col] = 0
+                self.hint_positions[row, col] = 0
 
             elif value == "M":
-                board.hint_positions[row - 1, col - 1] = 0
-                board.hint_positions[row - 1, col + 1] = 0
+                self.hint_positions[row - 1, col - 1] = 0
+                self.hint_positions[row - 1, col + 1] = 0
 
-                board.hint_positions[row + 1, col - 1] = 0
-                board.hint_positions[row + 1, col + 1] = 0
+                self.hint_positions[row + 1, col - 1] = 0
+                self.hint_positions[row + 1, col + 1] = 0
         # Remove padding
-        board.hint_positions = board.hint_positions[1:-1, 1:-1]
-        return board
-
-    def matrix_conflicts_with_hints(self, matrix) -> bool:
-        """Verifica se uma matriz de posições do tabuleiro é válida, isto é,
-        se não viola as restrições impostas pelos valores das pistas."""
-
-        boat = []
-        for (row, col), _ in np.ndenumerate(matrix):
-            if matrix[row][col] == 1:
-                boat.append((row, col))
-            if len(boat) == 4:
-                break
-
-        boat_size = len(boat)
-
-        if boat_size == 1:
-            row, col = boat[0]
-            adjacent_values = (
-                self.adjacent_vertical_values(row, col)
-                + self.adjacent_horizontal_values(row, col)
-                + self.diagonal_values(row, col)
-            )
-            if not all(value == Board.Empty() for value in adjacent_values):
-                return False
-            return (
-                self.hint_positions[row][col] == Board.Empty()
-                or self.hint_positions[row][col].value == "C"
-            )
-
-        for row, col in boat:
-            v = self.hint_positions[row][col].value
-            if v != Board.Empty():
-                if v == "C" or v == "W":
-                    return False
-                if v == "B":
-                    if (row > 0 and matrix[row - 1][col] != 1) or (
-                        row < 9 and matrix[row + 1][col] != 0
-                    ):
-                        return False
-                if v == "T":
-                    if (row > 0 and matrix[row - 1][col] != 0) or (
-                        row < 9 and matrix[row + 1][col] != 1
-                    ):
-                        return False
-                if v == "L":
-                    if (col > 0 and matrix[row][col - 1] != 1) or (
-                        col < 9 and matrix[row][col + 1] != 0
-                    ):
-                        return False
-                if v == "R":
-                    if (col > 0 and matrix[row][col - 1] != 0) or (
-                        col < 9 and matrix[row][col + 1] != 1
-                    ):
-                        return False
-
-        return True
-
-
-class Bimaru(Problem):
-    def __init__(self, board: Board):
-        """O construtor especifica o estado inicial."""
-        self.board = board
-        # TODO
+        self.hint_positions = self.hint_positions[1:-1, 1:-1]
 
     possible_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
@@ -247,6 +133,10 @@ class Bimaru(Problem):
             m.append(new_matrix)
         return m
 
+    def has_conflicts_with_hints(self, n):
+        # Todo
+        pass
+
     def gen_matrices(self, n):
         m = []
 
@@ -254,7 +144,7 @@ class Bimaru(Problem):
             new_matrix = np.zeros((10, 10))
             for i in range(n):
                 new_matrix[row, col + i] = 1
-                # if self.board.insertion_conflicts_with_hints(row, col + i):
+                # if self.problem.insertion_conflicts_with_hints(row, col + i):
                 # should_continue = True
                 # break
             # if should_continue:
@@ -268,7 +158,7 @@ class Bimaru(Problem):
         final = []
 
         for matrix in another_m:
-            if not self.board.matrix_conflicts_with_hints(matrix):
+            if not self.matrix_conflicts_with_hints(matrix):
                 final.append(matrix)
 
         return final
@@ -298,7 +188,7 @@ class Bimaru(Problem):
 
         # Only check if all rows and columns are filled:
         # More profound checks should be done before/when filling positions.
-        return np.all(state.board.cols == 0) and np.all(state.board.rows == 0)
+        return np.all(state.problem.cols == 0) and np.all(state.problem.rows == 0)
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
@@ -324,10 +214,10 @@ class Bimaru(Problem):
 
 
 if __name__ == "__main__":
+    # print(self.hint_positions)
+    # print(self.hint_positions.shape)
     board = Board.parse_instance()
-    print(board.hint_positions)
-    print(board.hint_positions.shape)
-    # problem = Bimaru(board)
+    problem = Bimaru(board)
     # print(problem.gen_matrices(1))
     # initial_state = BimaruState(board)
 
