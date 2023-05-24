@@ -40,10 +40,49 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
+    def adjacent_vertical_values(self, row, col):
+        """Devolve os valores imediatamente acima e abaixo,
+        respectivamente."""
+        if row == 0:
+            return [0, self.positions[row + 1, col]]
+        elif row == 9:
+            return [self.positions[row - 1, col], 0]
+        else:
+            return [self.positions[row - 1, col], self.positions[row + 1, col]]
+
+    def adjascent_horizontal_values(self, row, col):
+        """Devolve os valores imediatamente à esquerda e à direita,
+        respectivamente."""
+        if col == 0:
+            return [0, self.positions[row, col + 1]]
+        elif col == 9:
+            return [self.positions[row, col - 1], 0]
+        else:
+            return [self.positions[row, col - 1], self.positions[row, col + 1]]
+
     def print(self):
-        for row in range(len(self.positions)):
-            for col in range(len(self.positions[row])):
-                print(self.positions[row][col], end=" ")
+        for row in range(10):
+            for col in range(10):
+                value = self.positions[row, col]
+                if value == 0:
+                    print(".", end="")
+                elif value == 1:
+                    left, right = self.adjascent_horizontal_values(row, col)
+                    top, bottom = self.adjacent_vertical_values(row, col)
+                    if left == 1 and right == 0:
+                        print("r", end="")
+                    elif left == 1 and right == 1:
+                        print("m", end="")
+                    elif left == 0 and right == 1:
+                        print("l", end="")
+                    elif top == 1 and bottom == 0:
+                        print("b", end="")
+                    elif top == 1 and bottom == 1:
+                        print("m", end="")
+                    elif top == 0 and bottom == 1:
+                        print("t", end="")
+                    elif top == 0 and bottom == 0 and left == 0 and right == 0:
+                        print("c", end="")
             print()
 
     @staticmethod
@@ -218,6 +257,7 @@ if __name__ == "__main__":
     # print(self.hint_positions.shape)
     board = Board.parse_instance()
     problem = Bimaru(board)
+    board.print()
     # print(problem.gen_matrices(1))
     # initial_state = BimaruState(board)
 
