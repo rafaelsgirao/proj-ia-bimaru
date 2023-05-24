@@ -61,6 +61,8 @@ class Board:
             return [self.positions[row, col - 1], self.positions[row, col + 1]]
 
     def print(self):
+        """Imprime o tabuleiro."""
+        # todo: consider hints
         for row in range(10):
             for col in range(10):
                 value = self.positions[row, col]
