@@ -22,6 +22,18 @@ from search import (
 
 BOARD_SIZE = (10, 10)
 
+DEBUG = True
+
+
+# TODO: No final do projeto, remover esta função e ctrl+f por debug
+def debug(msg):
+    if DEBUG:
+        print(f"[DEBUG] {msg}")
+
+
+def rprint(msg):
+    print(msg, end="")
+
 
 class BimaruState:
     state_id = 0
@@ -67,24 +79,24 @@ class Board:
             for col in range(10):
                 value = self.positions[row, col]
                 if value == 0:
-                    print(".", end="")
+                    rprint(".")
                 elif value == 1:
                     left, right = self.adjascent_horizontal_values(row, col)
                     top, bottom = self.adjacent_vertical_values(row, col)
                     if left == 1 and right == 0:
-                        print("r", end="")
+                        rprint("r")
                     elif left == 1 and right == 1:
-                        print("m", end="")
+                        rprint("m")
                     elif left == 0 and right == 1:
-                        print("l", end="")
+                        rprint("l")  # TODO ocntinuar
                     elif top == 1 and bottom == 0:
-                        print("b", end="")
+                        rprint("b")
                     elif top == 1 and bottom == 1:
-                        print("m", end="")
+                        rprint("m")
                     elif top == 0 and bottom == 1:
-                        print("t", end="")
+                        rprint("t")
                     elif top == 0 and bottom == 0 and left == 0 and right == 0:
-                        print("c", end="")
+                        rprint("c")
             print()
 
     @staticmethod
