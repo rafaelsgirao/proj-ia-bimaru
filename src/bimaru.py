@@ -127,7 +127,7 @@ class Bimaru(Problem):
 
     def parse_hints(self):
         # Numpy array
-        self.hint_positions = np.full((10 + 2, 10 + 2), 1)
+        self.hints = np.full((10 + 2, 10 + 2), 1)
         # add hints
         hint_total = int(stdin.readline())
         for _ in range(hint_total):
@@ -137,58 +137,51 @@ class Bimaru(Problem):
             value = line[3]
 
             if value == "C":
-                self.hint_positions[row - 1 : row + 2, col - 1 : col + 2] = 0
-                self.hint_positions[row, col] = 1
+                self.hints[row - 1 : row + 2, col - 1 : col + 2] = 0
+                self.hints[row, col] = 1
             elif value == "B":
-                self.hint_positions[row - 2 : row + 1, col - 1] = 0
-                self.hint_positions[row - 2 : row + 1, col + 1] = 0
-                self.hint_positions[row + 1, col - 1 : col + 2] = 0
-                self.hint_positions[row, col] = 1
+                self.hints[row - 2 : row + 1, col - 1] = 0
+                self.hints[row - 2 : row + 1, col + 1] = 0
+                self.hints[row + 1, col - 1 : col + 2] = 0
+                self.hints[row, col] = 1
             elif value == "T":
-                self.hint_positions[row : row + 2, col - 1] = 0
-                self.hint_positions[row : row + 2, col + 1] = 0
-                self.hint_positions[row - 1, col - 1 : col + 1] = 0
-                self.hint_positions[row, col] = 1
+                self.hints[row : row + 2, col - 1] = 0
+                self.hints[row : row + 2, col + 1] = 0
+                self.hints[row - 1, col - 1 : col + 1] = 0
+                self.hints[row, col] = 1
             elif value == "L":
-                self.hint_positions[row - 1 : row + 2, col - 1] = 0
-                self.hint_positions[row + 1, col - 1 : col + 3] = 0
-                self.hint_positions[row - 1, col - 1 : col + 3] = 0
-                self.hint_positions[row, col] = 1
+                self.hints[row - 1 : row + 2, col - 1] = 0
+                self.hints[row + 1, col - 1 : col + 3] = 0
+                self.hints[row - 1, col - 1 : col + 3] = 0
+                self.hints[row, col] = 1
             elif value == "R":
-                self.hint_positions[row - 1 : row + 2, col + 1] = 0
-                self.hint_positions[row + 1, col - 2 : col + 1] = 0
-                self.hint_positions[row - 1, col - 2 : col + 1] = 0
-                self.hint_positions[row, col] = 1
+                self.hints[row - 1 : row + 2, col + 1] = 0
+                self.hints[row + 1, col - 2 : col + 1] = 0
+                self.hints[row - 1, col - 2 : col + 1] = 0
+                self.hints[row, col] = 1
             elif value == "W":
-                self.hint_positions[row, col] = 0
+                self.hints[row, col] = 0
 
             elif value == "M":
-                self.hint_positions[row - 1, col - 1] = 0
-                self.hint_positions[row - 1, col + 1] = 0
+                self.hints[row - 1, col - 1] = 0
+                self.hints[row - 1, col + 1] = 0
 
-                self.hint_positions[row + 1, col - 1] = 0
-                self.hint_positions[row + 1, col + 1] = 0
+                self.hints[row + 1, col - 1] = 0
+                self.hints[row + 1, col + 1] = 0
         # Remove padding
-        self.hint_positions = self.hint_positions[1:-1, 1:-1]
+        self.hints = self.hints[1:-1, 1:-1]
+
+    def has_conflicts_with_hints(self, matrix):
+        debug(f"\nMATRIZ DE INPUT: \n {matrix}")
+        debug(f"\nMATRIZ DAS HINTS: \n {self.hints}")
+        debug("matrix - self.hints:")
+        result = self.hints - matrix
+        debug(f"\n {result}")
+        return np.any(result < 0)
 
     possible_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
     possible_matrices = {}
-
-    def gen_matrices_1(self):
-        m = []
-        dumb = np.zeros((10, 10))
-        for (row, col), _ in np.ndenumerate(dumb):
-            print((row, col))
-            #  row, col = *index
-            new_matrix = np.zeros((10, 10))
-            new_matrix[row, col] = 1
-            m.append(new_matrix)
-        return m
-
-    def has_conflicts_with_hints(self, n):
-        # Todo
-        pass
 
     def gen_matrices(self, n):
         m = []
@@ -211,16 +204,14 @@ class Bimaru(Problem):
         final = []
 
         for matrix in another_m:
-            if not self.matrix_conflicts_with_hints(matrix):
+            if not self.has_conflicts_with_hints(matrix):
                 final.append(matrix)
 
         return final
 
     def gen_possible_matrices(self):
-        self.possible_matrices[1] = self.gen_matrices_1()
-        self.possible_matrices[2] = self.gen_matrices(2)
-        self.possible_matrices[3] = self.gen_matrices(3)
-        self.possible_matrices[4] = self.gen_matrices(4)
+        for i in (1, 2, 3, 4):
+            self.possible_matrices[i] = self.gen_matrices(i)
 
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
@@ -267,8 +258,8 @@ class Bimaru(Problem):
 
 
 if __name__ == "__main__":
-    # print(self.hint_positions)
-    # print(self.hint_positions.shape)
+    # print(self.hints)
+    # print(self.hints.shape)
     board = Board.parse_instance()
     problem = Bimaru(board)
     board.print()
