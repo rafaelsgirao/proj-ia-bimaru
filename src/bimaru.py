@@ -62,7 +62,7 @@ class Board:
         else:
             return [self.positions[row - 1, col], self.positions[row + 1, col]]
 
-    def adjascent_horizontal_values(self, row, col):
+    def adjacent_horizontal_values(self, row, col):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
         if col == 0:
@@ -81,7 +81,7 @@ class Board:
                 if value == 0:
                     rprint(".")
                 elif value == 1:
-                    left, right = self.adjascent_horizontal_values(row, col)
+                    left, right = self.adjacent_horizontal_values(row, col)
                     top, bottom = self.adjacent_vertical_values(row, col)
                     if left == 1 and right == 0:
                         rprint("r")
@@ -107,14 +107,6 @@ class Board:
 
         board.positions = np.full((10, 10), 0)
 
-        # read rows
-        line = stdin.readline().split()
-        board.rows = np.array([int(x) for x in line if x != "ROW"])
-
-        # read columns
-        line = stdin.readline().split()
-        board.cols = np.array([int(x) for x in line if x != "COLUMN"])
-
         return board
 
 
@@ -122,8 +114,18 @@ class Bimaru(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
         self.board = board
+        self.parse_limits()
         self.parse_hints()
         # TODO
+
+    def parse_limits(self):
+        # read rows
+        line = stdin.readline().split()
+        self.rows = np.array([int(x) for x in line if x != "ROW"])
+
+        # read columns
+        line = stdin.readline().split()
+        self.cols = np.array([int(x) for x in line if x != "COLUMN"])
 
     def parse_hints(self):
         # Numpy array
@@ -170,6 +172,23 @@ class Bimaru(Problem):
                 self.hints[row + 1, col + 1] = 0
         # Remove padding
         self.hints = self.hints[1:-1, 1:-1]
+
+    def is_valid_board(self, board):
+        for row in range(len(self.rows)):
+            board_row_sum = np.sum(board.positions[row, :])
+            # debug(
+            #    f"board_row_sum ({row}) = {board_row_sum} | row_val = {self.rows[row]}"
+            # )
+            if board_row_sum > self.rows[row]:
+                return False
+        for col in range(len(self.cols)):
+            board_col_sum = np.sum(board.positions[:, col])
+            # debug(
+            #    f"board_col_sum ({col}) = {board_col_sum} | col_val = {self.cols[row]}"
+            # )
+            if board_col_sum > self.cols[col]:
+                return False
+        return True
 
     def has_conflicts_with_hints(self, matrix):
         debug(f"\nMATRIZ DE INPUT: \n {matrix}")
