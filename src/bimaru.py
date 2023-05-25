@@ -105,6 +105,7 @@ class Board:
         e retorna uma instância da classe board."""
         board = Board()
 
+        board.remaining_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
         board.positions = np.full((10, 10), 0)
 
         return board
@@ -116,6 +117,7 @@ class Bimaru(Problem):
         self.board = board
         self.parse_limits()
         self.parse_hints()
+        self.gen_possible_matrices()
         # TODO
 
     def parse_limits(self):
@@ -198,8 +200,6 @@ class Bimaru(Problem):
         debug(f"\n {result}")
         return np.any(result < 0)
 
-    possible_ships = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
-
     possible_matrices = {}
 
     def gen_matrices(self, n):
@@ -235,6 +235,36 @@ class Bimaru(Problem):
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
+
+        rem_ships = state.board.remaining_ships
+        if len(rem_ships) == 0:
+            return []
+
+        # Get the next largest ship that hasn't been placed.
+        while True:
+            next_ship = rem_ships.pop(0)
+            for m in self.possible_matrices[next_ship]:
+                pass  # Fuck. Esqueci me de implementar aqui a funcao do nunmpy_things.py
+
+    """
+    Verifica se ambas as matrizes estão em conflito ou se podem coexistir.
+    """
+
+    def boards_in_conflict(b1: Board, b2: Board) -> bool:
+        m1, m2 = b1.positions, b2.positions
+        m_sums = np.empty_like(m1)
+        m2_pad = np.pad(m2, pad_width=1, mode="constant", constant_values=0)
+        #  print(m2_pad)
+        m_filter = np.array(([1, 1, 1], [1, 0, 1], [1, 1, 1]))
+        for (i, j), _ in np.ndenumerate(m_sums):
+            # m1_around_point = m1[i: i+ 2, j: j+2]
+            m2_around_point = m2_pad[i : i + 3, j : j + 3]  # 3x3 matrix around point
+            print(f"({i}, {j})")
+            print(m2_around_point)
+            print("---")
+            m_sums[i, j] = np.sum(m2_around_point * m_filter) * m1[i, j] + m1[i, j]
+
+        return np.any(m_sums > 1)
 
     def result(self, state: BimaruState, action):
         """Retorna o estado resultante de executar a 'action' sobre
