@@ -123,7 +123,6 @@ class Bimaru(Problem):
         """O construtor especifica o estado inicial."""
         self.board = board
         self.parse_hints()
-        # TODO
 
     def parse_hints(self):
         # Numpy array
@@ -190,11 +189,6 @@ class Bimaru(Problem):
             new_matrix = np.zeros((10, 10))
             for i in range(n):
                 new_matrix[row, col + i] = 1
-                # if self.problem.insertion_conflicts_with_hints(row, col + i):
-                # should_continue = True
-                # break
-            # if should_continue:
-            # continue
             m.append(new_matrix)
 
         another_m = [mx.transpose() for mx in m] if n > 1 else []
@@ -232,7 +226,11 @@ class Bimaru(Problem):
 
         # Only check if all rows and columns are filled:
         # More profound checks should be done before/when filling positions.
-        return np.all(state.problem.cols == 0) and np.all(state.problem.rows == 0)
+        return (
+            np.all(state.problem.cols == 0)
+            and np.all(state.problem.rows == 0)
+            and not self.has_conflicts_with_hints(state.board)
+        )
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
