@@ -234,20 +234,30 @@ class Bimaru(Problem):
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
+        actions = []
 
         rem_ships = state.board.remaining_ships.copy()
         if len(rem_ships) == 0:
-            yield (None, None)
+            return actions
 
-            # Get the next largest ship that hasn't been placed.
-            # while True:  # Look breaks when rem_ships.pop fails.
-        next_ship = rem_ships.pop(0)
-        debug(f"next_ship = {next_ship}")
-        for matrix_i in range(len(self.possible_matrices[next_ship])):
-            m = self.possible_matrices[next_ship][matrix_i]
+        next_boat = rem_ships.pop(0)
+
+        for matrix_idx in range(len(self.possible_matrices[next_boat])):
+            m = self.possible_matrices[next_boat][matrix_idx]
             if not self.matrices_in_conflict(m, state.board.positions):
-                yield (next_ship, matrix_i)
-        raise ValueError  # FIXME: retornar tuplo vazio p/ nao haver acoes
+                actions.append((next_boat, matrix_idx))
+                break
+
+        # Get the next largest ship that hasn't been placed.
+        # while True:  # Look breaks when rem_ships.pop fails.
+        # debug(f"next_ship = {next_ship}")
+        # for matrix_i in range(len(self.possible_matrices[next_ship])):
+        #     m = self.possible_matrices[next_ship][matrix_i]
+        #     if not self.matrices_in_conflict(m, state.board.positions):
+        #         yield [(next_ship, matrix_i)]
+        # return []
+
+        return actions
 
     """
     Verifica se dois boards estão em conflito ou se a sua junção pode existir. (TODO: verificar board resultante c/ is_valid_board)
@@ -279,15 +289,17 @@ class Bimaru(Problem):
         debug(f"action = {action}")
         new_board = state.board.copy()
         ship_matrix = self.possible_matrices[action[0]][action[1]]
-        new_board.positions += ship_matrix[1]
-        # debug(new_board.remaining_ships)
+        debug(f"old_matrix = \n{new_board.positions}")
+        new_board.positions += ship_matrix
+        debug(f"ship_matrix = \n{ship_matrix}")
         new_board.remaining_ships.remove(action[0])
         new_board.used_ships.append(action)
+        debug(f"new_board = \n{new_board.positions}")
 
         return BimaruState(new_board)
 
     def is_valid_board(self, board, goal_test=False):
-        def cmp(a, b, goal_test=False):
+        def cmp(a, b, goal_test):
             if goal_test:
                 return a == b
             else:
@@ -295,11 +307,7 @@ class Bimaru(Problem):
 
         for row in range(len(self.rows)):
             board_row_sum = np.sum(board.positions[row, :])
-            # debug(
-            #    f"board_row_sum ({row}) = {board_row_sum} | row_val = {self.rows[row]}"
-            # )
-            #    if board_row_sum > self.rows[row]:
-            if cmp(board_row_sum, self.rows[row]):
+            if cmp(board_row_sum, self.rows[row], goal_test):
                 return False
         for col in range(len(self.cols)):
             board_col_sum = np.sum(board.positions[:, col])
@@ -307,7 +315,7 @@ class Bimaru(Problem):
             #    f"board_col_sum ({col}) = {board_col_sum} | col_val = {self.cols[row]}"
             # )
             #  if board_col_sum > self.cols[col]:
-            if cmp(board_col_sum, self.cols[col]):
+            if cmp(board_col_sum, self.cols[col], goal_test):
                 return False
         return True
 
@@ -354,3 +362,4 @@ if __name__ == "__main__":
     goal_node = depth_first_tree_search(problem)
     # Imprimir para o standard output no formato indicado.
     goal_node.state.board.print()
+    print(f"{goal_node.state.board.remaining_ships}")
