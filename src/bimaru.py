@@ -133,7 +133,7 @@ class Board:
 class Bimaru(Problem):
     def __init__(self, board: Board):
         """O construtor especifica o estado inicial."""
-        self.board = board
+        self.initial = BimaruState(board)
         self.parse_limits()
         self.parse_hints()
         self.gen_possible_matrices()
@@ -224,6 +224,7 @@ class Bimaru(Problem):
             if not self.has_conflicts_with_hints(matrix):
                 final.append(matrix)
 
+        debug(f"final = {final}")
         return final
 
     def gen_possible_matrices(self):
@@ -286,7 +287,7 @@ class Bimaru(Problem):
         return BimaruState(new_board)
 
     def is_valid_board(self, board, goal_test=False):
-        def cmp(a, b, goal_test):
+        def cmp(a, b, goal_test=False):
             if goal_test:
                 return a == b
             else:
@@ -344,15 +345,12 @@ class Bimaru(Problem):
 
 
 if __name__ == "__main__":
-    # print(self.hints)
-    # print(self.hints.shape)
+    # Ler a instância do standard input.
     board = Board.parse_instance()
+    # Criar um problema a partir da instância.
     problem = Bimaru(board)
-    board.print()
-    # print(problem.gen_matrices(1))
-    s1 = BimaruState(board)
-
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
+    goal_node = depth_first_tree_search(problem)
     # Imprimir para o standard output no formato indicado.
-    pass
+    goal_node.state.board.print()
