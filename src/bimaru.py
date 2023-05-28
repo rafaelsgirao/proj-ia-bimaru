@@ -43,6 +43,24 @@ class HintPosition(Enum):
     WATER = "W"
 
 
+def is_board_position(value: str) -> bool:
+    """Verifica se o valor é uma posição do tabuleiro."""
+    return value in [
+        BoardPosition.BOTTOM,
+        BoardPosition.TOP,
+        BoardPosition.LEFT,
+        BoardPosition.RIGHT,
+        BoardPosition.MIDDLE,
+        BoardPosition.CENTER,
+        HintPosition.TOP,
+        HintPosition.BOTTOM,
+        HintPosition.LEFT,
+        HintPosition.RIGHT,
+        HintPosition.MIDDLE,
+        HintPosition.CENTER,
+    ]
+
+
 class PlaceDirection(Enum):
     LEFT_TO_RIGHT = 1
     TOP_TO_BOTTOM = 2
@@ -54,6 +72,44 @@ class PlaceDirection(Enum):
 
     def is_vertical(self) -> bool:
         return self == PlaceDirection.TOP_TO_BOTTOM or self == PlaceDirection.BOTTOM_TO_TOP
+
+
+class RemainingBoats:
+    """Representação interna dos barcos que faltam colocar."""
+
+    def __init__(self, ones=4, twos=3, threes=2, fours=1):
+        self.ones = ones
+        self.twos = twos
+        self.threes = threes
+        self.fours = fours
+
+    def get_next_size(self) -> int:
+        """Devolve o tamanho do próximo barco a ser colocado."""
+
+        if self.fours > 0:
+            self.fours -= 1
+            return 4
+        if self.threes > 0:
+            self.threes -= 1
+            return 3
+        if self.twos > 0:
+            self.twos -= 1
+            return 2
+        if self.ones > 0:
+            self.ones -= 1
+            return 1
+        return 0
+
+    def decrease_boat_count(self, size, count=1):
+        """Diminui o número de barcos de um determinado tamanho."""
+        if size == 1:
+            self.ones -= count
+        elif size == 2:
+            self.twos -= count
+        elif size == 3:
+            self.threes -= count
+        elif size == 4:
+            self.fours -= count
 
 
 class BimaruState:
@@ -83,6 +139,7 @@ class Board:
         self.positions = positions
         self.row_pieces = row_pieces
         self.col_pieces = col_pieces
+        self.remaining_boats = RemainingBoats()
 
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
@@ -92,7 +149,11 @@ class Board:
 
     def set_value(self, row: int, col: int, value: BoardPosition) -> None:
         """Define o valor na respetiva posição do tabuleiro."""
+        if self.get_value(row, col) is HintPosition:
+            raise ValueError("Cannot set value on a hint position")
         if row < 0 or row > 9 or col < 0 or col > 9:
+            if value != BoardPosition.UNKNOWN and value != BoardPosition.WATER:
+                raise ValueError(f"Cannot set value {value} in ({row},{col}) because the position is outside of the board")
             return
         self.positions[row][col] = value
 
@@ -225,7 +286,7 @@ class Board:
                         BoardPosition.WATER,
                         PlaceDirection.TOP_TO_BOTTOM,
                     )
-                    board.set_value(row - 1, col, HintPosition.WATER)
+                    board.set_value(row - 1, col, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.TOP)
                 case HintPosition.BOTTOM:
                     board.set_line(
@@ -242,7 +303,7 @@ class Board:
                         BoardPosition.WATER,
                         PlaceDirection.BOTTOM_TO_TOP,
                     )
-                    board.set_value(row + 1, col, HintPosition.WATER)
+                    board.set_value(row + 1, col, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.BOTTOM)
                 case HintPosition.LEFT:
                     board.set_line(
@@ -259,7 +320,7 @@ class Board:
                         BoardPosition.WATER,
                         PlaceDirection.LEFT_TO_RIGHT,
                     )
-                    board.set_value(row, col - 1, HintPosition.WATER)
+                    board.set_value(row, col - 1, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.LEFT)
                 case HintPosition.RIGHT:
                     board.set_line(
@@ -276,10 +337,60 @@ class Board:
                         BoardPosition.WATER,
                         PlaceDirection.RIGHT_TO_LEFT,
                     )
-                    board.set_value(row, col + 1, HintPosition.WATER)
+                    board.set_value(row, col + 1, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.RIGHT)
 
+        ones, twos, threes, fours = board.detect_boats()
+
+        board.remaining_boats.decrease_boat_count(1, ones)
+        board.remaining_boats.decrease_boat_count(2, twos)
+        board.remaining_boats.decrease_boat_count(3, threes)
+        board.remaining_boats.decrease_boat_count(4, fours)
+
         return board
+
+    def detect_boats(self) -> tuple[int, int, int, int]:
+        """Detecta barcos no tabuleiro já colocados pelas dicas."""
+        ones = twos = thres = fours = 0
+
+        # como o for loop vai de cima para baixo da esquerda para direita,
+        # validaremos somente as posições top, left e center, para nao repetir a contagem
+        for row in range(0, 10):
+            for col in range(0, 10):
+                size = 0
+                value = self.get_value(row, col)
+                if value not in (HintPosition.WATER, BoardPosition.WATER, BoardPosition.UNKNOWN):
+                    match value:
+                        case HintPosition.CENTER:
+                            size = 1
+                        case HintPosition.TOP:
+                            print("top")
+                            for i in range(4):
+                                size += 1
+                                print(self.get_value(row + i, col))
+                                if not is_board_position(self.get_value(row + i, col)):
+                                    if not self.get_value(row + i - 1, col) == HintPosition.BOTTOM:
+                                        size = 0
+                                    else:
+                                        size -= 1
+                                    break
+                        case HintPosition.LEFT:
+                            for i in range(4):
+                                size += 1
+                                if not is_board_position(self.get_value(row, col + i)):
+                                    if not self.get_value(row, col + i - 1) == HintPosition.RIGHT:
+                                        size = 0
+                                    break
+                if size == 1:
+                    ones += 1
+                elif size == 2:
+                    twos += 1
+                elif size == 3:
+                    thres += 1
+                elif size == 4:
+                    fours += 1
+
+        return (ones, twos, thres, fours)
 
     @staticmethod
     def parse_pieces() -> tuple[np.array, np.array]:
@@ -323,15 +434,29 @@ class Bimaru(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
-        # TODO
-        pass
+        has_remaining_boat = state.board.remaining_boats.get_next_size() > 0
+        has_invalid_row = any(state.board.row_pieces != 0)
+        has_invalid_col = any(state.board.col_pieces != 0)
+        return not has_remaining_boat and not has_invalid_row and not has_invalid_col
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
         # TODO
         pass
 
-    # TODO: outros metodos da classe
+    def can_insert_boat(self, state: BimaruState, row: int, col: int, size: int, direction: PlaceDirection):
+        """Verifica se é possível inserir um barco de tamanho 'size' na posição
+        ('row', 'col') com a orientação 'direction'."""
+
+        def is_empty_position(pos: any) -> bool:
+            return pos in (BoardPosition.UNKNOWN, BoardPosition.WATER, HintPosition.WATER)
+
+        adjacent_positions = []
+        match direction:
+            case PlaceDirection.LEFT_TO_RIGHT:
+                for i in range(size):
+                    adjacent_positions.append(x for x in state.board.adjacent_vertical_values(row, col + i))
+                    adjacent_positions.append()
 
 
 if __name__ == "__main__":
