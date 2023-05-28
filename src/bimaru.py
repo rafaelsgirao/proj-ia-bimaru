@@ -24,6 +24,14 @@ BOARD_SIZE = (10, 10)
 
 DEBUG = True
 
+# Array de tuplos (row, col, value)
+initial_hints = []
+
+
+def is_default_position(row, col):
+    """Verifica se a posição é uma posição inicial do tabuleiro."""
+    return (row, col) in map(lambda x: (x[0], x[1]), initial_hints)
+
 
 # TODO: No final do projeto, remover esta função e ctrl+f por debug
 def debug(msg):
@@ -45,8 +53,6 @@ class BimaruState:
 
     def __lt__(self, other):
         return self.id < other.id
-
-    # TODO: outros metodos da classe
 
 
 class Board:
@@ -74,29 +80,32 @@ class Board:
 
     def print(self):
         """Imprime o tabuleiro."""
-        # todo: consider hints
         for row in range(10):
             for col in range(10):
+                toPrint = "."
                 value = self.positions[row, col]
-                if value == 0:
-                    rprint(".")
-                elif value == 1:
+                if value == 0 and is_default_position(row, col):
+                    toPrint = "W"
+                if value == 1:
                     left, right = self.adjacent_horizontal_values(row, col)
                     top, bottom = self.adjacent_vertical_values(row, col)
                     if left == 1 and right == 0:
-                        rprint("r")
+                        toPrint = "r"
                     elif left == 1 and right == 1:
-                        rprint("m")
+                        toPrint = "m"
                     elif left == 0 and right == 1:
-                        rprint("l")
+                        toPrint = "l"
                     elif top == 1 and bottom == 0:
-                        rprint("b")
+                        toPrint = "b"
                     elif top == 1 and bottom == 1:
-                        rprint("m")
+                        toPrint = "b"
                     elif top == 0 and bottom == 1:
-                        rprint("t")
+                        toPrint = "t"
                     elif top == 0 and bottom == 0 and left == 0 and right == 0:
-                        rprint("c")
+                        toPrint = "c"
+                    if is_default_position(row, col):
+                        toPrint = toPrint.upper()
+                rprint(toPrint)
             print()
 
     @staticmethod
@@ -149,6 +158,7 @@ class Bimaru(Problem):
             row = int(line[1]) + 1
             col = int(line[2]) + 1
             value = line[3]
+            initial_hints.append((row, col, value))
 
             if value == "C":
                 self.hints[row - 1 : row + 2, col - 1 : col + 2] = 0
