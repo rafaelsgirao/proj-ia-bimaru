@@ -24,13 +24,13 @@ BOARD_SIZE = (10, 10)
 
 DEBUG = True
 
-# Array de tuplos (row, col, value)
-initial_hints = []
+# Array de tuplos (row, col)
+hint_positions = []
 
 
 def is_default_position(row, col):
     """Verifica se a posição é uma posição inicial do tabuleiro."""
-    return (row, col) in map(lambda x: (x[0], x[1]), initial_hints)
+    return (row, col) in hint_positions
 
 
 # TODO: No final do projeto, remover esta função e ctrl+f por debug
@@ -158,7 +158,7 @@ class Bimaru(Problem):
             row = int(line[1]) + 1
             col = int(line[2]) + 1
             value = line[3]
-            initial_hints.append((row, col, value))
+            hint_positions.append((row, col))
 
             if value == "C":
                 self.hints[row - 1 : row + 2, col - 1 : col + 2] = 0
