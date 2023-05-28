@@ -31,6 +31,7 @@ class BoardPosition(Enum):
     CENTER = "c"
     WATER = "."
     UNKNOWN = "?" if DEBUG else " "
+    OUT_OF_BOUNDS = "x"
 
 
 class HintPosition(Enum):
@@ -59,6 +60,14 @@ def is_board_position(value: str) -> bool:
         HintPosition.MIDDLE,
         HintPosition.CENTER,
     ]
+
+
+def is_empty_position(pos: any) -> bool:
+    return pos in (BoardPosition.UNKNOWN, BoardPosition.WATER, HintPosition.WATER, BoardPosition.OUT_OF_BOUNDS)
+
+
+def is_placeble_position(pos: any) -> bool:
+    return pos == BoardPosition.UNKNOWN
 
 
 class PlaceDirection(Enum):
@@ -123,8 +132,6 @@ class BimaruState:
     def __lt__(self, other):
         return self.id < other.id
 
-    # TODO: outros metodos da classe
-
 
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
@@ -144,16 +151,17 @@ class Board:
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
         if row < 0 or row > 9 or col < 0 or col > 9:
-            return BoardPosition.UNKNOWN
+            return BoardPosition.OUT_OF_BOUNDS
         return self.positions[row][col]
 
     def set_value(self, row: int, col: int, value: BoardPosition) -> None:
         """Define o valor na respetiva posição do tabuleiro."""
-        if self.get_value(row, col) is HintPosition:
+        prev = self.get_value(row, col)
+        if prev is HintPosition:
             raise ValueError("Cannot set value on a hint position")
-        if row < 0 or row > 9 or col < 0 or col > 9:
+        if prev is BoardPosition.OUT_OF_BOUNDS:
             if value != BoardPosition.UNKNOWN and value != BoardPosition.WATER:
-                raise ValueError(f"Cannot set value {value} in ({row},{col}) because the position is outside of the board")
+                raise ValueError(f"Cannot set value {value} in ({row},{col}) because the position is out of bounds")
             return
         self.positions[row][col] = value
 
@@ -364,10 +372,8 @@ class Board:
                         case HintPosition.CENTER:
                             size = 1
                         case HintPosition.TOP:
-                            print("top")
                             for i in range(4):
                                 size += 1
-                                print(self.get_value(row + i, col))
                                 if not is_board_position(self.get_value(row + i, col)):
                                     if not self.get_value(row + i - 1, col) == HintPosition.BOTTOM:
                                         size = 0
@@ -410,6 +416,36 @@ class Board:
         for row in self.positions:
             print(string.join([str(i.value) for i in row]))
 
+    def can_place_boat(self, row: int, col: int, size: int, direction: PlaceDirection):
+        """Verifica se é possível inserir um barco de tamanho 'size' na posição
+        ('row', 'col') com a orientação 'direction'."""
+
+        boat_positions = []
+        adjacent_positions = []
+        match direction:
+            case PlaceDirection.LEFT_TO_RIGHT:
+                for i in range(size):
+                    boat_positions.append(self.get_value(row, col + i))
+                    adjacent_positions.extend(self.adjacent_vertical_values(row, col + i))
+                    adjacent_positions.append(self.adjacent_diagonal_values(row, col + i))
+            case PlaceDirection.RIGHT_TO_LEFT:
+                for i in range(size):
+                    boat_positions.append(self.get_value(row, col - i))
+                    adjacent_positions.extend(self.adjacent_vertical_values(row, col - i))
+                    adjacent_positions.append(self.adjacent_diagonal_values(row, col - i))
+            case PlaceDirection.TOP_TO_BOTTOM:
+                for i in range(size):
+                    boat_positions.append(self.get_value(row + i, col))
+                    adjacent_positions.extend(self.adjacent_horizontal_values(row + i, col))
+                    adjacent_positions.append(self.adjacent_diagonal_values(row + i, col))
+            case PlaceDirection.BOTTOM_TO_TOP:
+                for i in range(size):
+                    boat_positions.append(self.get_value(row - i, col))
+                    adjacent_positions.extend(self.adjacent_horizontal_values(row - i, col))
+                    adjacent_positions.append(self.adjacent_diagonal_values(row - i, col))
+
+        return all([is_empty_position(i) for i in adjacent_positions]) and all([is_placeble_position(i) for i in boat_positions])
+
 
 class Bimaru(Problem):
     def __init__(self, board: Board):
@@ -444,21 +480,10 @@ class Bimaru(Problem):
         # TODO
         pass
 
-    def can_insert_boat(self, state: BimaruState, row: int, col: int, size: int, direction: PlaceDirection):
-        """Verifica se é possível inserir um barco de tamanho 'size' na posição
-        ('row', 'col') com a orientação 'direction'."""
-
-        def is_empty_position(pos: any) -> bool:
-            return pos in (BoardPosition.UNKNOWN, BoardPosition.WATER, HintPosition.WATER)
-
-        adjacent_positions = []
-        match direction:
-            case PlaceDirection.LEFT_TO_RIGHT:
-                for i in range(size):
-                    adjacent_positions.append(x for x in state.board.adjacent_vertical_values(row, col + i))
-                    adjacent_positions.append()
-
 
 if __name__ == "__main__":
+    # Get board from input
     board = Board.parse_instance()
+
+    # Print board
     board.print()
