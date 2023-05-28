@@ -6,10 +6,7 @@
 # 99309 Rafael Girão
 # 104147 Guilherme Marcondes
 
-
-import numpy as np
-from sys import stdin
-
+import sys
 from search import (
     Problem,
     Node,
@@ -38,65 +35,36 @@ class BimaruState:
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
-    class Position:
-        """Representação interna de uma posição do tabuleiro."""
-
-        def __init__(self, value: str, hint=False) -> None:
-            self.value = value
-            self.hint = hint
-
-        def __str__(self) -> str:
-            return self.value.upper() if self.hint else self.value
-
-        def __repr__(self) -> str:
-            return self.__str__()
-
     def get_value(self, row: int, col: int) -> str:
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.array[row][col].value
+        # TODO
+        pass
 
-    def adjacent_vertical_values(self, row: int, col: int) -> (str, str):  # type: ignore
+    def adjacent_vertical_values(self, row: int, col: int) -> tuple[str, str]:
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
-        return (self.array[row - 1][col].value, self.array[row + 1][col].value)
+        # TODO
+        pass
 
-    def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):  # type: ignore
+    def adjacent_horizontal_values(self, row: int, col: int) -> tuple[str, str]:
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
-        return (self.array[row][col - 1].value, self.array[row][col + 1].value)
-
-    def print(self):
-        for row in range(len(self.array)):
-            for col in range(len(self.array[row])):
-                print(self.array[row][col], end=" ")
-            print()
+        # TODO
+        pass
 
     @staticmethod
     def parse_instance():
         """Lê o test do standard input (stdin) que é passado como argumento
-        e retorna uma instância da classe Board."""
-        board = Board()
+        e retorna uma instância da classe Board.
 
-        # Numpy array
-        board.array = np.full((10, 10), Board.Position(value="."))
+        Por exemplo:
+            $ python3 bimaru.py < input_T01
 
-        # read rows
-        line = stdin.readline().split()
-        board.rows = np.array([int(x) for x in line if x != "ROW"])
-
-        # read columns
-        line = stdin.readline().split()
-        board.cols = np.array([int(x) for x in line if x != "COLUMN"])
-        # add hints
-        hint_total = int(stdin.readline())
-        for _ in range(hint_total):
-            line = stdin.readline().split()
-            row = int(line[1])
-            col = int(line[2])
-            value = line[3]
-            board.array[row][col] = Board.Position(value, hint=True)
-
-        return board
+            > from sys import stdin
+            > line = stdin.readline().split()
+        """
+        # TODO
+        pass
 
     # TODO: outros metodos da classe
 
@@ -125,10 +93,8 @@ class Bimaru(Problem):
         """Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
-        # Only check if all rows and columns are filled:
-        # More profound checks should be done before/when filling positions.
-
-        return np.all(state.board.cols == 0) and np.all(state.board.rows == 0)
+        # TODO
+        pass
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
@@ -141,8 +107,6 @@ class Bimaru(Problem):
 if __name__ == "__main__":
     # TODO:
     # Ler o ficheiro do standard input,
-    board = Board.parse_instance()
-    board.print()
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
