@@ -22,7 +22,7 @@ from search import (
 
 BOARD_SIZE = (10, 10)
 
-DEBUG = True
+DEBUG = False
 
 # Array de tuplos (row, col)
 hint_positions = []
@@ -98,7 +98,7 @@ class Board:
                     elif top == 1 and bottom == 0:
                         toPrint = "b"
                     elif top == 1 and bottom == 1:
-                        toPrint = "b"
+                        toPrint = "m"
                     elif top == 0 and bottom == 1:
                         toPrint = "t"
                     elif top == 0 and bottom == 0 and left == 0 and right == 0:
@@ -246,7 +246,6 @@ class Bimaru(Problem):
             m = self.possible_matrices[next_boat][matrix_idx]
             if not self.matrices_in_conflict(m, state.board.positions):
                 actions.append((next_boat, matrix_idx))
-                break
 
         # Get the next largest ship that hasn't been placed.
         # while True:  # Look breaks when rem_ships.pop fails.
@@ -286,13 +285,15 @@ class Bimaru(Problem):
         das presentes na lista obtida pela execução de
         self.actions(state)."""
 
+        next_boat_size, matrix_idx = action
+
         debug(f"action = {action}")
         new_board = state.board.copy()
-        ship_matrix = self.possible_matrices[action[0]][action[1]]
+        ship_matrix = self.possible_matrices[next_boat_size][matrix_idx]
         debug(f"old_matrix = \n{new_board.positions}")
         new_board.positions += ship_matrix
         debug(f"ship_matrix = \n{ship_matrix}")
-        new_board.remaining_ships.remove(action[0])
+        new_board.remaining_ships.remove(next_boat_size)
         new_board.used_ships.append(action)
         debug(f"new_board = \n{new_board.positions}")
 
@@ -331,7 +332,6 @@ class Bimaru(Problem):
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
-        # TODO
         pass
 
     @classmethod
@@ -359,7 +359,7 @@ if __name__ == "__main__":
     problem = Bimaru(board)
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
-    goal_node = depth_first_tree_search(problem)
+    goal_node = breadth_first_tree_search(problem)
     # Imprimir para o standard output no formato indicado.
     goal_node.state.board.print()
     print(f"{goal_node.state.board.remaining_ships}")
