@@ -109,6 +109,10 @@ class RemainingBoats:
             return 1
         return 0
 
+    def get_values(self) -> tuple[int, int, int, int]:
+        """Devolve os valores de barcos que faltam colocar."""
+        return self.ones, self.twos, self.threes, self.fours
+
     def decrease_boat_count(self, size, count=1):
         """Diminui o número de barcos de um determinado tamanho."""
         if size == 1:
@@ -191,11 +195,12 @@ class Board:
     def place_boat(self, row: int, col: int, size: int, direction: PlaceDirection):
         """Posiciona um barco ao tabuleiro."""
 
-        # Coloca o barco no tabuleiro
-        self.set_line(row, col, size, BoardPosition.CENTER, direction)
-
         if size == 1:
+            self.set_value(row, col, BoardPosition.CENTER)
             return
+
+        # Coloca o barco no tabuleiro
+        self.set_line(row, col, size, BoardPosition.MIDDLE, direction)
 
         # Coloca as extremidades do barco
         match direction:
@@ -455,8 +460,26 @@ class Bimaru(Problem):
     def actions(self, state: BimaruState):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
-        # TODO
-        pass
+        actions = []
+
+        ones, twos, threes, fours = state.board.remaining_boats.get_values()
+
+        for row in range(10):
+            for col in range(10):
+                if ones > 0 and state.board.can_place_boat(row, col, 1, PlaceDirection.LEFT_TO_RIGHT):
+                    actions.append((row, col, 1, PlaceDirection.LEFT_TO_RIGHT))
+                for direction in PlaceDirection:
+                    for size in range(2, 5):
+                        if size == 2 and twos == 0:
+                            continue
+                        elif size == 3 and threes == 0:
+                            continue
+                        elif size == 4 and fours == 0:
+                            continue
+                        if state.board.can_place_boat(row, col, size, direction):
+                            actions.append((row, col, size, direction))
+
+        return actions
 
     def result(self, state: BimaruState, action):
         """Retorna o estado resultante de executar a 'action' sobre
