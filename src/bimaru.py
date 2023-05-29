@@ -113,7 +113,7 @@ class RemainingBoats:
             return 1
         return 0
 
-    def get_values(self) -> (int,int,int,int):
+    def get_values(self) -> (int, int, int, int):
         """Devolve os valores de barcos que faltam colocar."""
         return self.ones, self.twos, self.threes, self.fours
 
@@ -406,6 +406,12 @@ class Board:
                 board.set_value(row, col, HintPosition.RIGHT)
                 if board.get_value(row, col - 1) not in HintPosition:
                     board.set_value(row, col - 1, BoardPosition.PROBABLY_BOAT)
+            if value == HintPosition.MIDDLE:
+                board.set_value(row - 1, col - 1, BoardPosition.WATER)
+                board.set_value(row - 1, col + 1, BoardPosition.WATER)
+                board.set_value(row + 1, col - 1, BoardPosition.WATER)
+                board.set_value(row + 1, col + 1, BoardPosition.WATER)
+                board.set_value(row, col, HintPosition.MIDDLE)
 
         ones, twos, threes, fours = board.detect_boats()
 
@@ -651,5 +657,5 @@ class Bimaru(Problem):
 if __name__ == "__main__":
     board = Board.parse_instance()
     problem = Bimaru(board)
-    goal_node = depth_first_tree_search(problem)
+    goal_node = astar_search(problem)
     goal_node.state.board.print()
