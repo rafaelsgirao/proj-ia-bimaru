@@ -22,8 +22,6 @@ import copy as copy
 
 DEBUG = False
 
-hash_table = []
-
 
 def debug(msg):
     if DEBUG:
@@ -115,7 +113,7 @@ class RemainingBoats:
             return 1
         return 0
 
-    def get_values(self) -> tuple[int, int, int, int]:
+    def get_values(self) -> (int,int,int,int):
         """Devolve os valores de barcos que faltam colocar."""
         return self.ones, self.twos, self.threes, self.fours
 
@@ -291,17 +289,17 @@ class Board:
         # Coloca o barco
         self.place_boat(row, col, size, direction)
 
-    def adjacent_vertical_values(self, row: int, col: int) -> tuple[str, str]:
+    def adjacent_vertical_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
         return (self.get_value(row - 1, col), self.get_value(row + 1, col))
 
-    def adjacent_horizontal_values(self, row: int, col: int) -> tuple[str, str]:
+    def adjacent_horizontal_values(self, row: int, col: int) -> (str, str):
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
         return (self.get_value(row, col - 1), self.get_value(row, col + 1))
 
-    def adjacent_diagonal_values(self, row: int, col: int) -> tuple[str, str, str, str]:
+    def adjacent_diagonal_values(self, row: int, col: int) -> (str, str, str, str):
         """Devolve os valores das diagonais."""
         return (
             self.get_value(row - 1, col - 1),
@@ -449,7 +447,7 @@ class Board:
             return True
         raise NotImplementedError
 
-    def detect_boats(self) -> tuple[int, int, int, int]:
+    def detect_boats(self) -> (int, int, int, int):
         """Detecta barcos no tabuleiro já colocados pelas dicas."""
         ones = twos = thres = fours = 0
 
@@ -495,7 +493,7 @@ class Board:
         return (ones, twos, thres, fours)
 
     @staticmethod
-    def parse_pieces() -> tuple[np.array, np.array]:
+    def parse_pieces() -> (np.array, np.array):
         """Lê o test do standard input (stdin) que é passado como argumento
         e retorna uma instância da classe Board."""
         line = sys.stdin.readline().split()
@@ -653,5 +651,5 @@ class Bimaru(Problem):
 if __name__ == "__main__":
     board = Board.parse_instance()
     problem = Bimaru(board)
-    goal_node = astar_search(problem)
+    goal_node = depth_first_tree_search(problem)
     goal_node.state.board.print()
