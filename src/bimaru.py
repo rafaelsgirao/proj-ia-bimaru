@@ -22,6 +22,8 @@ import copy as copy
 
 DEBUG = True
 
+hash_table = []
+
 
 def debug(msg):
     if DEBUG:
@@ -38,6 +40,7 @@ class BoardPosition(Enum):
     WATER = "."
     UNKNOWN = "?" if DEBUG else " "
     OUT_OF_BOUNDS = "x"
+    PROBABLY_BOAT = "p"
 
 
 class HintPosition(Enum):
@@ -59,6 +62,7 @@ def is_board_position(value: str) -> bool:
         BoardPosition.RIGHT,
         BoardPosition.MIDDLE,
         BoardPosition.CENTER,
+        BoardPosition.PROBABLY_BOAT,
         HintPosition.TOP,
         HintPosition.BOTTOM,
         HintPosition.LEFT,
@@ -102,16 +106,12 @@ class RemainingBoats:
         """Devolve o tamanho do próximo barco a ser colocado."""
 
         if self.fours > 0:
-            self.fours -= 1
             return 4
         if self.threes > 0:
-            self.threes -= 1
             return 3
         if self.twos > 0:
-            self.twos -= 1
             return 2
         if self.ones > 0:
-            self.ones -= 1
             return 1
         return 0
 
@@ -164,6 +164,27 @@ class Board:
         self.row_pieces = row_pieces
         self.col_pieces = col_pieces
         self.remaining_boats = remaining_boats
+
+    def incomplete_boats(self) -> int:
+        """Devolve a quantidade de barcos incompletos."""
+        count = 0
+        for row in range(10):
+            for col in range(10):
+                value = self.get_value(row, col)
+                if value in (HintPosition.TOP, HintPosition.LEFT, HintPosition.BOTTOM, HintPosition.RIGHT):
+                    if value == HintPosition.TOP:
+                        if self.get_value(row + 1, col) == BoardPosition.UNKNOWN:
+                            count += 1
+                    elif value == HintPosition.LEFT:
+                        if self.get_value(row, col + 1) == BoardPosition.UNKNOWN:
+                            count += 1
+                    elif value == HintPosition.BOTTOM:
+                        if self.get_value(row - 1, col) == BoardPosition.UNKNOWN:
+                            count += 1
+                    elif value == HintPosition.RIGHT:
+                        if self.get_value(row, col - 1) == BoardPosition.UNKNOWN:
+                            count += 1
+        return count
 
     def copy(self):
         return Board(
@@ -328,6 +349,8 @@ class Board:
                     )
                     board.set_value(row - 1, col, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.TOP)
+                    if board.get_value(row + 1, col) not in HintPosition:
+                        board.set_value(row + 1, col, BoardPosition.PROBABLY_BOAT)
                 case HintPosition.BOTTOM:
                     board.set_line(
                         row + 1,
@@ -345,6 +368,8 @@ class Board:
                     )
                     board.set_value(row + 1, col, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.BOTTOM)
+                    if board.get_value(row - 1, col) not in HintPosition:
+                        board.set_value(row - 1, col, BoardPosition.PROBABLY_BOAT)
                 case HintPosition.LEFT:
                     board.set_line(
                         row - 1,
@@ -362,6 +387,8 @@ class Board:
                     )
                     board.set_value(row, col - 1, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.LEFT)
+                    if board.get_value(row, col + 1) not in HintPosition:
+                        board.set_value(row, col + 1, BoardPosition.PROBABLY_BOAT)
                 case HintPosition.RIGHT:
                     board.set_line(
                         row - 1,
@@ -379,6 +406,8 @@ class Board:
                     )
                     board.set_value(row, col + 1, BoardPosition.WATER)
                     board.set_value(row, col, HintPosition.RIGHT)
+                    if board.get_value(row, col - 1) not in HintPosition:
+                        board.set_value(row, col - 1, BoardPosition.PROBABLY_BOAT)
 
         ones, twos, threes, fours = board.detect_boats()
 
@@ -450,7 +479,7 @@ class Board:
         for row in range(len(self.positions)):
             val = self.positions[row]
             if DEBUG:
-                print(str(self.col_pieces[row]) + " ", end="")
+                print(str(self.row_pieces[row]) + " ", end="")
             print(string.join([str(i.value) for i in val]))
 
     def can_place_boat(self, row: int, col: int, size: int, direction: PlaceDirection):
@@ -535,7 +564,7 @@ class Bimaru(Problem):
                 if ones > 0 and state.board.can_place_boat(row, col, 1, PlaceDirection.LEFT_TO_RIGHT):
                     actions.append((row, col, 1, PlaceDirection.LEFT_TO_RIGHT))
                 for direction in (PlaceDirection.LEFT_TO_RIGHT, PlaceDirection.TOP_TO_BOTTOM):
-                    for size in range(2, 5):
+                    for size in range(4, 1, -1):
                         if size == 2 and twos == 0:
                             continue
                         elif size == 3 and threes == 0:
@@ -543,7 +572,16 @@ class Bimaru(Problem):
                         elif size == 4 and fours == 0:
                             continue
                         if state.board.can_place_boat(row, col, size, direction):
+                            debug(f"actions: size = {size}, {state.board.remaining_boats.get_values()}")
                             actions.append((row, col, size, direction))
+
+        # sort by size (bigger first)
+        actions.sort(key=lambda x: x[2], reverse=True)
+
+        next_size = state.board.remaining_boats.get_next_size()
+
+        if len(actions) > 0 and actions[0][2] < next_size:
+            return []
 
         return actions
 
@@ -559,11 +597,14 @@ class Bimaru(Problem):
         new_board.place_boat_and_waters(row, col, size, direction)
         new_board.remaining_boats.decrease_boat_count(size)
 
-        print(f"Placing boat of size {size} at ({row}, {col}) with direction {direction}")
-        state.board.print()
-        print()
-        new_board.print()
-        print("====================================")
+        # print(f"Placing boat of size {size} at ({row}, {col}) with direction {direction}")
+        # hashed_raw = f"{size}{row}{col"
+        # hashed = hash(new_board.positions.tobytes())
+        # if hashed in hash_table:
+        #     print(new_board.remaining_boats.get_values())
+        #     new_board.print()
+        #     raise ValueError(f"tabuleiro visto duas vezes!")
+        # hash_table.append(hashed)
 
         return BimaruState(new_board)
 
@@ -578,23 +619,24 @@ class Bimaru(Problem):
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
-        # TODO
-        pass
+        sum_of_remaining_pieces = sum(node.state.board.row_pieces) + sum(node.state.board.col_pieces)
+        ones, twos, threes, fours = node.state.board.remaining_boats.get_values()
+        remaining_boats = ones + 4 * twos + 6 * threes + 8 * fours
+        value = 10 * sum_of_remaining_pieces + 20 * remaining_boats
+        value += 100 * node.state.board.incomplete_boats()
+        return value
 
 
 if __name__ == "__main__":
     # Get board from input
     board = Board.parse_instance()
     board.print()
+    print(board.can_place_boat(0, 0, 3, PlaceDirection.LEFT_TO_RIGHT))
+    print(board.can_place_boat(9, 9, 3, PlaceDirection.TOP_TO_BOTTOM))
+    print(board.can_place_boat(6, 8, 1, PlaceDirection.TOP_TO_BOTTOM))
 
-    #   exit()
-    # print(board.can_place_boat(1, 0, 4, PlaceDirection.TOP_TO_BOTTOM))
-
-    problem = Bimaru(board)
-
-    # print(problem.actions(problem.initial))
-
-    goal_node = breadth_first_tree_search(problem)
-
-    # Print board
-    goal_node.state.board.print()
+    # Real solution
+    # board = Board.parse_instance()
+    # problem = Bimaru(board)
+    # goal_node = astar_search(problem)
+    # goal_node.state.board.print()
