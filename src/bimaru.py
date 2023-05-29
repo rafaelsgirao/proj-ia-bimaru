@@ -20,7 +20,7 @@ from search import (
 import numpy as np
 import copy as copy
 
-DEBUG = True
+DEBUG = False
 
 hash_table = []
 
@@ -77,7 +77,7 @@ def is_empty_position(pos: any) -> bool:
 
 
 def is_placeble_position(pos: any) -> bool:
-    return pos == BoardPosition.UNKNOWN
+    return pos in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT)
 
 
 class PlaceDirection(Enum):
@@ -158,12 +158,14 @@ class Board:
         row_pieces: np.array = np.array([]),
         col_pieces: np.array = np.array([]),
         remaining_boats: RemainingBoats = RemainingBoats(),
+        already_placed_boats=[],
     ):
         """Inicializa um tabuleiro vazio."""
         self.positions = positions
         self.row_pieces = row_pieces
         self.col_pieces = col_pieces
         self.remaining_boats = remaining_boats
+        self.already_placed_boats = already_placed_boats
 
     def incomplete_boats(self) -> int:
         """Devolve a quantidade de barcos incompletos."""
@@ -173,16 +175,16 @@ class Board:
                 value = self.get_value(row, col)
                 if value in (HintPosition.TOP, HintPosition.LEFT, HintPosition.BOTTOM, HintPosition.RIGHT):
                     if value == HintPosition.TOP:
-                        if self.get_value(row + 1, col) == BoardPosition.UNKNOWN:
+                        if self.get_value(row + 1, col) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
                     elif value == HintPosition.LEFT:
-                        if self.get_value(row, col + 1) == BoardPosition.UNKNOWN:
+                        if self.get_value(row, col + 1) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
                     elif value == HintPosition.BOTTOM:
-                        if self.get_value(row - 1, col) == BoardPosition.UNKNOWN:
+                        if self.get_value(row - 1, col) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
                     elif value == HintPosition.RIGHT:
-                        if self.get_value(row, col - 1) == BoardPosition.UNKNOWN:
+                        if self.get_value(row, col - 1) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
         return count
 
@@ -192,6 +194,7 @@ class Board:
             copy.deepcopy(self.row_pieces),
             copy.deepcopy(self.col_pieces),
             self.remaining_boats.copy(),
+            copy.deepcopy(self.already_placed_boats),
         )
 
     def get_value(self, row: int, col: int) -> str:
@@ -259,10 +262,10 @@ class Board:
             self.set_value(row - size + 1, col, BoardPosition.TOP)
             self.set_line(row - 1, col, size - 2, BoardPosition.MIDDLE, direction)
 
+        self.already_placed_boats.append((row, col, size, direction))
+
     def place_boat_and_waters(self, row: int, col: int, size: int, direction: PlaceDirection):
         """Coloca agua ao redor de um barco."""
-
-        # print(f"Placing boat of size {size} at ({row}, {col}) with direction {direction}")
 
         # Coloca agua ao redor do barco
         match direction:
@@ -416,7 +419,38 @@ class Board:
         board.remaining_boats.decrease_boat_count(3, threes)
         board.remaining_boats.decrease_boat_count(4, fours)
 
+        board.fill_empty_spaces()
+
         return board
+
+    def have_enought_left_pieces_for_boat(self, row: int, col: int, size: int, direction: PlaceDirection) -> bool:
+        if direction == PlaceDirection.LEFT_TO_RIGHT:
+            if col + size > 10:
+                return False
+            left_row_pieces = self.row_pieces[row]
+            for i in range(size):
+                val = self.get_value(row, col + i)
+                if self.col_pieces[col + i] == 0:
+                    if val not in HintPosition and val != BoardPosition.PROBABLY_BOAT:
+                        return False
+                left_row_pieces += 1 if val in HintPosition or val == BoardPosition.PROBABLY_BOAT else 0
+            if left_row_pieces < size:
+                return False
+            return True
+        elif direction == PlaceDirection.TOP_TO_BOTTOM:
+            if row + size > 10:
+                return False
+            left_col_pieces = self.col_pieces[col]
+            for i in range(size):
+                val = self.get_value(row + i, col)
+                if self.row_pieces[row + i] == 0:
+                    if val not in HintPosition and val != BoardPosition.PROBABLY_BOAT:
+                        return False
+                left_col_pieces += 1 if val in HintPosition or val == BoardPosition.PROBABLY_BOAT else 0
+            if left_col_pieces < size:
+                return False
+            return True
+        raise NotImplementedError
 
     def detect_boats(self) -> tuple[int, int, int, int]:
         """Detecta barcos no tabuleiro já colocados pelas dicas."""
@@ -432,6 +466,7 @@ class Board:
                     match value:
                         case HintPosition.CENTER:
                             size = 1
+                            self.already_placed_boats.append((row, col, size, PlaceDirection.LEFT_TO_RIGHT))
                         case HintPosition.TOP:
                             for i in range(4):
                                 size += 1
@@ -441,6 +476,8 @@ class Board:
                                     else:
                                         size -= 1
                                     break
+                            if size > 0:
+                                self.already_placed_boats.append((row, col, size, PlaceDirection.TOP_TO_BOTTOM))
                         case HintPosition.LEFT:
                             for i in range(4):
                                 size += 1
@@ -448,6 +485,8 @@ class Board:
                                     if not self.get_value(row, col + i - 1) == HintPosition.RIGHT:
                                         size = 0
                                     break
+                            if size > 0:
+                                self.already_placed_boats.append((row, col, size, PlaceDirection.LEFT_TO_RIGHT))
                 if size == 1:
                     ones += 1
                 elif size == 2:
@@ -471,6 +510,13 @@ class Board:
 
         return (row_pieces, col_pieces)
 
+    def fill_empty_spaces(self):
+        for row in range(10):
+            for col in range(10):
+                if self.row_pieces[row] == 0 or self.col_pieces[col] == 0:
+                    if self.get_value(row, col) == BoardPosition.UNKNOWN:
+                        self.set_value(row, col, BoardPosition.WATER)
+
     def print(self):
         """Imprime o tabuleiro."""
         string = " " if DEBUG else ""
@@ -486,14 +532,15 @@ class Board:
         """Verifica se é possível inserir um barco de tamanho 'size' na posição
         ('row', 'col') com a orientação 'direction'."""
 
+        if (row, col, size, direction) in self.already_placed_boats:
+            return False
+
         boat_positions = []
         adjacent_positions = []
+        if not self.have_enought_left_pieces_for_boat(row, col, size, direction):
+            return False
         match direction:
             case PlaceDirection.LEFT_TO_RIGHT:
-                if self.row_pieces[row] < size:
-                    return False
-                if any([v == 0 for v in self.col_pieces[col : col + size]]):
-                    return False
                 adjacent_positions.append(self.get_value(row, col - 1))
                 adjacent_positions.append(self.get_value(row, col + size))
                 for i in range(size):
@@ -503,10 +550,6 @@ class Board:
             case PlaceDirection.RIGHT_TO_LEFT:
                 raise NotImplementedError
             case PlaceDirection.TOP_TO_BOTTOM:
-                if self.col_pieces[col] < size:
-                    return False
-                if any([v == 0 for v in self.row_pieces[row : row + size]]):
-                    return False
                 adjacent_positions.append(self.get_value(row - 1, col))
                 adjacent_positions.append(self.get_value(row + size, col))
                 for i in range(size):
@@ -557,31 +600,23 @@ class Bimaru(Problem):
         partir do estado passado como argumento."""
         actions = []
 
-        ones, twos, threes, fours = state.board.remaining_boats.get_values()
-
-        for row in range(10):
-            for col in range(10):
-                if ones > 0 and state.board.can_place_boat(row, col, 1, PlaceDirection.LEFT_TO_RIGHT):
-                    actions.append((row, col, 1, PlaceDirection.LEFT_TO_RIGHT))
-                for direction in (PlaceDirection.LEFT_TO_RIGHT, PlaceDirection.TOP_TO_BOTTOM):
-                    for size in range(4, 1, -1):
-                        if size == 2 and twos == 0:
-                            continue
-                        elif size == 3 and threes == 0:
-                            continue
-                        elif size == 4 and fours == 0:
-                            continue
-                        if state.board.can_place_boat(row, col, size, direction):
-                            debug(f"actions: size = {size}, {state.board.remaining_boats.get_values()}")
-                            actions.append((row, col, size, direction))
-
-        # sort by size (bigger first)
-        actions.sort(key=lambda x: x[2], reverse=True)
-
         next_size = state.board.remaining_boats.get_next_size()
 
-        if len(actions) > 0 and actions[0][2] < next_size:
-            return []
+        if next_size == 0:
+            return actions
+
+        if next_size == 1:
+            for row in range(10):
+                for col in range(10):
+                    if state.board.can_place_boat(row, col, 1, PlaceDirection.LEFT_TO_RIGHT):
+                        actions.append((row, col, 1, PlaceDirection.LEFT_TO_RIGHT))
+        else:
+            for row in range(10):
+                for col in range(10):
+                    if state.board.can_place_boat(row, col, next_size, PlaceDirection.LEFT_TO_RIGHT):
+                        actions.append((row, col, next_size, PlaceDirection.LEFT_TO_RIGHT))
+                    if state.board.can_place_boat(row, col, next_size, PlaceDirection.TOP_TO_BOTTOM):
+                        actions.append((row, col, next_size, PlaceDirection.TOP_TO_BOTTOM))
 
         return actions
 
@@ -596,15 +631,7 @@ class Bimaru(Problem):
         new_board = state.board.copy()
         new_board.place_boat_and_waters(row, col, size, direction)
         new_board.remaining_boats.decrease_boat_count(size)
-
-        # print(f"Placing boat of size {size} at ({row}, {col}) with direction {direction}")
-        # hashed_raw = f"{size}{row}{col"
-        # hashed = hash(new_board.positions.tobytes())
-        # if hashed in hash_table:
-        #     print(new_board.remaining_boats.get_values())
-        #     new_board.print()
-        #     raise ValueError(f"tabuleiro visto duas vezes!")
-        # hash_table.append(hashed)
+        new_board.fill_empty_spaces()
 
         return BimaruState(new_board)
 
@@ -615,6 +642,7 @@ class Bimaru(Problem):
         has_remaining_boats = any([val != 0 for val in state.board.remaining_boats.get_values()])
         has_invalid_row = any(state.board.row_pieces != 0)
         has_invalid_col = any(state.board.col_pieces != 0)
+
         return not has_remaining_boats and not has_invalid_row and not has_invalid_col
 
     def h(self, node: Node):
@@ -628,15 +656,7 @@ class Bimaru(Problem):
 
 
 if __name__ == "__main__":
-    # Get board from input
     board = Board.parse_instance()
-    board.print()
-    print(board.can_place_boat(0, 0, 3, PlaceDirection.LEFT_TO_RIGHT))
-    print(board.can_place_boat(9, 9, 3, PlaceDirection.TOP_TO_BOTTOM))
-    print(board.can_place_boat(6, 8, 1, PlaceDirection.TOP_TO_BOTTOM))
-
-    # Real solution
-    # board = Board.parse_instance()
-    # problem = Bimaru(board)
-    # goal_node = astar_search(problem)
-    # goal_node.state.board.print()
+    problem = Bimaru(board)
+    goal_node = astar_search(problem)
+    goal_node.state.board.print()
