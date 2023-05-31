@@ -85,10 +85,10 @@ class PlaceDirection(Enum):
     BOTTOM_TO_TOP = 4
 
     def is_horizontal(self) -> bool:
-        return self == PlaceDirection.LEFT_TO_RIGHT or self == PlaceDirection.RIGHT_TO_LEFT
+        return self is PlaceDirection.LEFT_TO_RIGHT or self is PlaceDirection.RIGHT_TO_LEFT
 
     def is_vertical(self) -> bool:
-        return self == PlaceDirection.TOP_TO_BOTTOM or self == PlaceDirection.BOTTOM_TO_TOP
+        return self is PlaceDirection.TOP_TO_BOTTOM or self is PlaceDirection.BOTTOM_TO_TOP
 
 
 class RemainingBoats:
@@ -172,27 +172,27 @@ class Board:
             for col in range(10):
                 value = self.get_value(row, col)
                 if value in (HintPosition.TOP, HintPosition.LEFT, HintPosition.BOTTOM, HintPosition.RIGHT):
-                    if value == HintPosition.TOP:
+                    if value is HintPosition.TOP:
                         if self.get_value(row + 1, col) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
-                    elif value == HintPosition.LEFT:
+                    elif value is HintPosition.LEFT:
                         if self.get_value(row, col + 1) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
-                    elif value == HintPosition.BOTTOM:
+                    elif value is HintPosition.BOTTOM:
                         if self.get_value(row - 1, col) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
-                    elif value == HintPosition.RIGHT:
+                    elif value is HintPosition.RIGHT:
                         if self.get_value(row, col - 1) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
                             count += 1
         return count
 
     def copy(self):
         return Board(
-            copy.deepcopy(self.positions),
-            copy.deepcopy(self.row_pieces),
-            copy.deepcopy(self.col_pieces),
+            np.copy(self.positions),
+            np.copy(self.row_pieces),
+            np.copy(self.col_pieces),
             self.remaining_boats.copy(),
-            copy.deepcopy(self.already_placed_boats),
+            self.already_placed_boats.copy()
         )
 
     def get_value(self, row: int, col: int) -> str:
@@ -205,10 +205,10 @@ class Board:
         """Define o valor na respetiva posição do tabuleiro."""
         prev = self.get_value(row, col)
         if prev in HintPosition:
-            if value.value == prev.value.lower() or (value == BoardPosition.WATER and prev == HintPosition.WATER):
+            if value.value == prev.value.lower() or (value is BoardPosition.WATER and prev is HintPosition.WATER):
                 return
             raise ValueError(f"Cannot set value: {value} on a hint position: {prev}")
-        if prev == BoardPosition.OUT_OF_BOUNDS:
+        if prev is BoardPosition.OUT_OF_BOUNDS:
             if value != BoardPosition.UNKNOWN and value != BoardPosition.WATER:
                 raise ValueError(f"Cannot set value {value} in ({row},{col}) because the position is out of bounds")
             return
@@ -221,16 +221,16 @@ class Board:
 
     def set_line(self, row: int, col: int, size: int, value: BoardPosition, direction: PlaceDirection):
         """Define o valor na respetiva linha do tabuleiro."""
-        if direction == PlaceDirection.LEFT_TO_RIGHT:
+        if direction is PlaceDirection.LEFT_TO_RIGHT:
             for i in range(size):
                 self.set_value(row, col + i, value)
-        if direction == PlaceDirection.TOP_TO_BOTTOM:
+        if direction is PlaceDirection.TOP_TO_BOTTOM:
             for i in range(size):
                 self.set_value(row + i, col, value)
-        if direction == PlaceDirection.RIGHT_TO_LEFT:
+        if direction is PlaceDirection.RIGHT_TO_LEFT:
             for i in range(size):
                 self.set_value(row, col - i, value)
-        if direction == PlaceDirection.BOTTOM_TO_TOP:
+        if direction is PlaceDirection.BOTTOM_TO_TOP:
             for i in range(size):
                 self.set_value(row - i, col, value)
 
@@ -242,19 +242,19 @@ class Board:
             return
 
         # Coloca o barco no tabuleiro
-        if direction == PlaceDirection.LEFT_TO_RIGHT:
+        if direction is PlaceDirection.LEFT_TO_RIGHT:
             self.set_value(row, col, BoardPosition.LEFT)
             self.set_value(row, col + size - 1, BoardPosition.RIGHT)
             self.set_line(row, col + 1, size - 2, BoardPosition.MIDDLE, direction)
-        elif direction == PlaceDirection.TOP_TO_BOTTOM:
+        elif direction is PlaceDirection.TOP_TO_BOTTOM:
             self.set_value(row, col, BoardPosition.TOP)
             self.set_value(row + size - 1, col, BoardPosition.BOTTOM)
             self.set_line(row + 1, col, size - 2, BoardPosition.MIDDLE, direction)
-        elif direction == PlaceDirection.RIGHT_TO_LEFT:
+        elif direction is PlaceDirection.RIGHT_TO_LEFT:
             self.set_value(row, col, BoardPosition.RIGHT)
             self.set_value(row, col - size + 1, BoardPosition.LEFT)
             self.set_line(row, col - 1, size - 2, BoardPosition.MIDDLE, direction)
-        elif direction == PlaceDirection.BOTTOM_TO_TOP:
+        elif direction is PlaceDirection.BOTTOM_TO_TOP:
             self.set_value(row, col, BoardPosition.BOTTOM)
             self.set_value(row - size + 1, col, BoardPosition.TOP)
             self.set_line(row - 1, col, size - 2, BoardPosition.MIDDLE, direction)
@@ -265,22 +265,22 @@ class Board:
         """Coloca agua ao redor de um barco."""
 
         # Coloca agua ao redor do barco
-        if direction == PlaceDirection.LEFT_TO_RIGHT:
+        if direction is PlaceDirection.LEFT_TO_RIGHT:
             self.set_line(row - 1, col - 1, size + 2, BoardPosition.WATER, direction)
             self.set_value(row, col - 1, BoardPosition.WATER)
             self.set_value(row, col + size, BoardPosition.WATER)
             self.set_line(row + 1, col - 1, size + 2, BoardPosition.WATER, direction)
-        if direction == PlaceDirection.TOP_TO_BOTTOM:
+        if direction is PlaceDirection.TOP_TO_BOTTOM:
             self.set_line(row - 1, col - 1, size + 2, BoardPosition.WATER, direction)
             self.set_value(row - 1, col, BoardPosition.WATER)
             self.set_value(row + size, col, BoardPosition.WATER)
             self.set_line(row - 1, col + 1, size + 2, BoardPosition.WATER, direction)
-        if direction == PlaceDirection.RIGHT_TO_LEFT:
+        if direction is PlaceDirection.RIGHT_TO_LEFT:
             self.set_line(row - 1, col + 1, size + 2, BoardPosition.WATER, direction)
             self.set_value(row, col + 1, BoardPosition.WATER)
             self.set_value(row, col - size, BoardPosition.WATER)
             self.set_line(row + 1, col + 1, size + 2, BoardPosition.WATER, direction)
-        if direction == PlaceDirection.BOTTOM_TO_TOP:
+        if direction is PlaceDirection.BOTTOM_TO_TOP:
             self.set_line(row + 1, col - 1, size + 2, BoardPosition.WATER, direction)
             self.set_value(row + 1, col, BoardPosition.WATER)
             self.set_value(row - size, col, BoardPosition.WATER)
@@ -325,12 +325,12 @@ class Board:
             col = int(line[2])
             value = HintPosition(line[3])
 
-            if value == HintPosition.WATER:
+            if value is HintPosition.WATER:
                 board.set_value(row, col, HintPosition.WATER)
-            if value == HintPosition.CENTER:
+            if value is HintPosition.CENTER:
                 board.place_boat_and_waters(row, col, 1, PlaceDirection.LEFT_TO_RIGHT)
                 board.set_value(row, col, HintPosition.CENTER)
-            if value == HintPosition.TOP:
+            if value is HintPosition.TOP:
                 board.set_line(
                     row - 1,
                     col - 1,
@@ -349,7 +349,7 @@ class Board:
                 board.set_value(row, col, HintPosition.TOP)
                 if board.get_value(row + 1, col) not in HintPosition:
                     board.set_value(row + 1, col, BoardPosition.PROBABLY_BOAT)
-            if value == HintPosition.BOTTOM:
+            if value is HintPosition.BOTTOM:
                 board.set_line(
                     row + 1,
                     col - 1,
@@ -368,7 +368,7 @@ class Board:
                 board.set_value(row, col, HintPosition.BOTTOM)
                 if board.get_value(row - 1, col) not in HintPosition:
                     board.set_value(row - 1, col, BoardPosition.PROBABLY_BOAT)
-            if value == HintPosition.LEFT:
+            if value is HintPosition.LEFT:
                 board.set_line(
                     row - 1,
                     col - 1,
@@ -387,7 +387,7 @@ class Board:
                 board.set_value(row, col, HintPosition.LEFT)
                 if board.get_value(row, col + 1) not in HintPosition:
                     board.set_value(row, col + 1, BoardPosition.PROBABLY_BOAT)
-            if value == HintPosition.RIGHT:
+            if value is HintPosition.RIGHT:
                 board.set_line(
                     row - 1,
                     col + 1,
@@ -406,7 +406,7 @@ class Board:
                 board.set_value(row, col, HintPosition.RIGHT)
                 if board.get_value(row, col - 1) not in HintPosition:
                     board.set_value(row, col - 1, BoardPosition.PROBABLY_BOAT)
-            if value == HintPosition.MIDDLE:
+            if value is HintPosition.MIDDLE:
                 board.set_value(row - 1, col - 1, BoardPosition.WATER)
                 board.set_value(row - 1, col + 1, BoardPosition.WATER)
                 board.set_value(row + 1, col - 1, BoardPosition.WATER)
@@ -425,29 +425,29 @@ class Board:
         return board
 
     def have_enought_left_pieces_for_boat(self, row: int, col: int, size: int, direction: PlaceDirection) -> bool:
-        if direction == PlaceDirection.LEFT_TO_RIGHT:
+        if direction is PlaceDirection.LEFT_TO_RIGHT:
             if col + size > 10:
                 return False
             left_row_pieces = self.row_pieces[row]
             for i in range(size):
                 val = self.get_value(row, col + i)
                 if self.col_pieces[col + i] == 0:
-                    if val not in HintPosition and val != BoardPosition.PROBABLY_BOAT:
+                    if val not in HintPosition and val is not BoardPosition.PROBABLY_BOAT:
                         return False
-                left_row_pieces += 1 if val in HintPosition or val == BoardPosition.PROBABLY_BOAT else 0
+                left_row_pieces += 1 if val in HintPosition or val is BoardPosition.PROBABLY_BOAT else 0
             if left_row_pieces < size:
                 return False
             return True
-        elif direction == PlaceDirection.TOP_TO_BOTTOM:
+        elif direction is PlaceDirection.TOP_TO_BOTTOM:
             if row + size > 10:
                 return False
             left_col_pieces = self.col_pieces[col]
             for i in range(size):
                 val = self.get_value(row + i, col)
                 if self.row_pieces[row + i] == 0:
-                    if val not in HintPosition and val != BoardPosition.PROBABLY_BOAT:
+                    if val not in HintPosition and val is not BoardPosition.PROBABLY_BOAT:
                         return False
-                left_col_pieces += 1 if val in HintPosition or val == BoardPosition.PROBABLY_BOAT else 0
+                left_col_pieces += 1 if val in HintPosition or val is BoardPosition.PROBABLY_BOAT else 0
             if left_col_pieces < size:
                 return False
             return True
@@ -464,25 +464,25 @@ class Board:
                 size = 0
                 value = self.get_value(row, col)
                 if value not in (HintPosition.WATER, BoardPosition.WATER, BoardPosition.UNKNOWN):
-                    if value == HintPosition.CENTER:
+                    if value is HintPosition.CENTER:
                         size = 1
                         self.already_placed_boats.append((row, col, size, PlaceDirection.LEFT_TO_RIGHT))
-                    if value == HintPosition.TOP:
+                    if value is HintPosition.TOP:
                         for i in range(4):
                             size += 1
                             if not is_board_position(self.get_value(row + i, col)):
-                                if not self.get_value(row + i - 1, col) == HintPosition.BOTTOM:
+                                if not self.get_value(row + i - 1, col) is HintPosition.BOTTOM:
                                     size = 0
                                 else:
                                     size -= 1
                                 break
                         if size > 0:
                             self.already_placed_boats.append((row, col, size, PlaceDirection.TOP_TO_BOTTOM))
-                    if value == HintPosition.LEFT:
+                    if value is HintPosition.LEFT:
                         for i in range(4):
                             size += 1
                             if not is_board_position(self.get_value(row, col + i)):
-                                if not self.get_value(row, col + i - 1) == HintPosition.RIGHT:
+                                if not self.get_value(row, col + i - 1) is HintPosition.RIGHT:
                                     size = 0
                                 break
                         if size > 0:
@@ -514,7 +514,7 @@ class Board:
         for row in range(10):
             for col in range(10):
                 if self.row_pieces[row] == 0 or self.col_pieces[col] == 0:
-                    if self.get_value(row, col) == BoardPosition.UNKNOWN:
+                    if self.get_value(row, col) is BoardPosition.UNKNOWN:
                         self.set_value(row, col, BoardPosition.WATER)
 
     def print(self):
@@ -539,23 +539,23 @@ class Board:
         adjacent_positions = []
         if not self.have_enought_left_pieces_for_boat(row, col, size, direction):
             return False
-        if direction == PlaceDirection.LEFT_TO_RIGHT:
+        if direction is PlaceDirection.LEFT_TO_RIGHT:
             adjacent_positions.append(self.get_value(row, col - 1))
             adjacent_positions.append(self.get_value(row, col + size))
             for i in range(size):
                 boat_positions.append(self.get_value(row, col + i))
                 adjacent_positions.extend(self.adjacent_vertical_values(row, col + i))
                 adjacent_positions.extend(self.adjacent_diagonal_values(row, col + i))
-        if direction == PlaceDirection.RIGHT_TO_LEFT:
+        if direction is PlaceDirection.RIGHT_TO_LEFT:
             raise NotImplementedError
-        if direction == PlaceDirection.TOP_TO_BOTTOM:
+        if direction is PlaceDirection.TOP_TO_BOTTOM:
             adjacent_positions.append(self.get_value(row - 1, col))
             adjacent_positions.append(self.get_value(row + size, col))
             for i in range(size):
                 boat_positions.append(self.get_value(row + i, col))
                 adjacent_positions.extend(self.adjacent_horizontal_values(row + i, col))
                 adjacent_positions.extend(self.adjacent_diagonal_values(row + i, col))
-        if direction == PlaceDirection.BOTTOM_TO_TOP:
+        if direction is PlaceDirection.BOTTOM_TO_TOP:
             raise NotImplementedError
 
         can_place = True
@@ -566,20 +566,20 @@ class Board:
             if val in HintPosition:
                 is_first = i == 0
                 is_last = i == len(boat_positions) - 1
-                if direction == PlaceDirection.LEFT_TO_RIGHT:
+                if direction is PlaceDirection.LEFT_TO_RIGHT:
                     if is_first:
-                        can_place = val == HintPosition.LEFT
+                        can_place = val is HintPosition.LEFT
                     elif is_last:
-                        can_place = val == HintPosition.RIGHT
+                        can_place = val is HintPosition.RIGHT
                     else:
-                        can_place = val == HintPosition.MIDDLE
-                elif direction == PlaceDirection.TOP_TO_BOTTOM:
+                        can_place = val is HintPosition.MIDDLE
+                elif direction is PlaceDirection.TOP_TO_BOTTOM:
                     if is_first:
-                        can_place = val == HintPosition.TOP
+                        can_place = val is HintPosition.TOP
                     elif is_last:
-                        can_place = val == HintPosition.BOTTOM
+                        can_place = val is HintPosition.BOTTOM
                     else:
-                        can_place = val == HintPosition.MIDDLE
+                        can_place = val is HintPosition.MIDDLE
             else:
                 can_place = is_placeble_position(val)
         if not can_place:
@@ -639,14 +639,14 @@ class Bimaru(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas de acordo com as regras do problema."""
         has_remaining_boats = any([val != 0 for val in state.board.remaining_boats.get_values()])
-        has_invalid_row = any(state.board.row_pieces != 0)
-        has_invalid_col = any(state.board.col_pieces != 0)
+        has_invalid_row = np.any(state.board.row_pieces != 0)
+        has_invalid_col = np.any(state.board.col_pieces != 0)
 
         return not has_remaining_boats and not has_invalid_row and not has_invalid_col
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
-        sum_of_remaining_pieces = sum(node.state.board.row_pieces) + sum(node.state.board.col_pieces)
+        sum_of_remaining_pieces = np.sum(node.state.board.row_pieces + node.state.board.col_pieces)
         ones, twos, threes, fours = node.state.board.remaining_boats.get_values()
         remaining_boats = ones + 4 * twos + 6 * threes + 8 * fours
         value = 10 * sum_of_remaining_pieces + 20 * remaining_boats
