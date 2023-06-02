@@ -438,6 +438,27 @@ class Board:
             return True
         raise NotImplementedError
 
+    def check_board_sanity(self) -> bool:
+        # Check row sanity.
+        m = self.positions
+
+        count_piece = lambda pc: 1 if is_placeble_position(pc) else 0
+        for row_i in range(0, 10):
+            row = m[row_i]
+            row_sum = sum(count_piece(pc) for pc in row)
+
+            if row_sum < self.row_pieces[row_i]:
+                return False
+
+        for col_i in range(0, 10):
+            col = m[:, col_i]
+            col_sum = sum(count_piece(pc) for pc in col)
+
+            if col_sum < self.col_pieces[col_i]:
+
+                return False
+        return True
+
     def detect_boats(self) -> (int, int, int, int):
         """Detecta barcos no tabuleiro já colocados pelas dicas."""
         ones = twos = thres = fours = 0
@@ -456,7 +477,7 @@ class Board:
                         for i in range(4):
                             size += 1
                             if not is_board_position(self.get_value(row + i, col)):
-                                if not self.get_value(row + i - 1, col) is HintPosition.BOTTOM:
+                                if self.get_value(row + i - 1, col) is not HintPosition.BOTTOM:
                                     size = 0
                                 else:
                                     size -= 1
@@ -467,7 +488,7 @@ class Board:
                         for i in range(4):
                             size += 1
                             if not is_board_position(self.get_value(row, col + i)):
-                                if not self.get_value(row, col + i - 1) is HintPosition.RIGHT:
+                                if self.get_value(row, col + i - 1) is not HintPosition.RIGHT:
                                     size = 0
                                 break
                         if size > 0:
@@ -598,6 +619,9 @@ class Bimaru(Problem):
         """Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento."""
         actions = []
+
+        if not state.board.check_board_sanity():
+            return []
 
         next_size = state.board.remaining_boats.get_next_size()
 
