@@ -132,21 +132,6 @@ class RemainingBoats:
         return RemainingBoats(self.ones, self.twos, self.threes, self.fours)
 
 
-class BimaruState:
-    state_id = 0
-
-    def __init__(self, board):
-        self.board = board
-        self.id = BimaruState.state_id
-        BimaruState.state_id += 1
-
-    def __lt__(self, other):
-        return self.id < other.id
-
-    def copy(self):
-        return BimaruState(self.board.copy())
-
-
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
@@ -192,7 +177,7 @@ class Board:
             np.copy(self.row_pieces),
             np.copy(self.col_pieces),
             self.remaining_boats.copy(),
-            self.already_placed_boats.copy()
+            self.already_placed_boats.copy(),
         )
 
     def get_value(self, row: int, col: int) -> str:
@@ -587,6 +572,21 @@ class Board:
 
         is_surrounded_by_water = all([is_empty_position(i) for i in adjacent_positions])
         return can_place and is_surrounded_by_water
+
+
+class BimaruState:
+    state_id = 0
+
+    def __init__(self, board: Board):
+        self.board = board
+        self.id = BimaruState.state_id
+        BimaruState.state_id += 1
+
+    def __lt__(self, other):
+        return self.id < other.id
+
+    def copy(self):
+        return BimaruState(self.board.copy())
 
 
 class Bimaru(Problem):
