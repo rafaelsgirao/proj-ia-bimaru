@@ -1,7 +1,4 @@
-# bimaru.py: Template para implementação do projeto de Inteligência Artificial 2022/2023.
-# Devem alterar as classes e funções neste ficheiro de acordo com as instruções do enunciado.
-# Além das funções e classes já definidas, podem acrescentar outras que considerem pertinentes.
-
+# bimaru.py: Implementação do projeto de Inteligência Artificial 2022/2023.
 # Grupo 32:
 # 99309 Rafael Girão
 # 104147 Guilherme Marcondes
@@ -11,21 +8,9 @@ from enum import Enum
 from search import (
     Problem,
     Node,
-    astar_search,
-    breadth_first_tree_search,
     depth_first_tree_search,
-    greedy_search,
-    recursive_best_first_search,
 )
 import numpy as np
-import copy as copy
-
-DEBUG = False
-
-
-def debug(msg):
-    if DEBUG:
-        print(f"DEBUG: {msg}")
 
 
 class BoardPosition(Enum):
@@ -36,7 +21,7 @@ class BoardPosition(Enum):
     MIDDLE = "m"
     CENTER = "c"
     WATER = "."
-    UNKNOWN = "?" if DEBUG else " "
+    UNKNOWN = " "
     OUT_OF_BOUNDS = "x"
     PROBABLY_BOAT = "p"
 
@@ -71,7 +56,12 @@ def is_board_position(value: str) -> bool:
 
 
 def is_empty_position(pos: any) -> bool:
-    return pos in (BoardPosition.UNKNOWN, BoardPosition.WATER, HintPosition.WATER, BoardPosition.OUT_OF_BOUNDS)
+    return pos in (
+        BoardPosition.UNKNOWN,
+        BoardPosition.WATER,
+        HintPosition.WATER,
+        BoardPosition.OUT_OF_BOUNDS,
+    )
 
 
 def is_placeble_position(pos: any) -> bool:
@@ -156,18 +146,35 @@ class Board:
         for row in range(10):
             for col in range(10):
                 value = self.get_value(row, col)
-                if value in (HintPosition.TOP, HintPosition.LEFT, HintPosition.BOTTOM, HintPosition.RIGHT):
+                if value in (
+                    HintPosition.TOP,
+                    HintPosition.LEFT,
+                    HintPosition.BOTTOM,
+                    HintPosition.RIGHT,
+                ):
                     if value is HintPosition.TOP:
-                        if self.get_value(row + 1, col) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
+                        if self.get_value(row + 1, col) in (
+                            BoardPosition.UNKNOWN,
+                            BoardPosition.PROBABLY_BOAT,
+                        ):
                             count += 1
                     elif value is HintPosition.LEFT:
-                        if self.get_value(row, col + 1) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
+                        if self.get_value(row, col + 1) in (
+                            BoardPosition.UNKNOWN,
+                            BoardPosition.PROBABLY_BOAT,
+                        ):
                             count += 1
                     elif value is HintPosition.BOTTOM:
-                        if self.get_value(row - 1, col) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
+                        if self.get_value(row - 1, col) in (
+                            BoardPosition.UNKNOWN,
+                            BoardPosition.PROBABLY_BOAT,
+                        ):
                             count += 1
                     elif value is HintPosition.RIGHT:
-                        if self.get_value(row, col - 1) in (BoardPosition.UNKNOWN, BoardPosition.PROBABLY_BOAT):
+                        if self.get_value(row, col - 1) in (
+                            BoardPosition.UNKNOWN,
+                            BoardPosition.PROBABLY_BOAT,
+                        ):
                             count += 1
         return count
 
@@ -469,7 +476,11 @@ class Board:
             for col in range(0, 10):
                 size = 0
                 value = self.get_value(row, col)
-                if value not in (HintPosition.WATER, BoardPosition.WATER, BoardPosition.UNKNOWN):
+                if value not in (
+                    HintPosition.WATER,
+                    BoardPosition.WATER,
+                    BoardPosition.UNKNOWN,
+                ):
                     if value is HintPosition.CENTER:
                         size = 1
                         self.already_placed_boats.append((row, col, size, PlaceDirection.LEFT_TO_RIGHT))
