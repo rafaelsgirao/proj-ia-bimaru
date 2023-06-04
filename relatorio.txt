@@ -1,0 +1,22 @@
+Foi nos introduzido como projeto de Inteligência Artificial desenvolver um programa em Python que resolva o problema _Bimaru_ utilizando técnicas de Inteligência Artificial.
+
+    Em suma, o problema _Bimaru_ consiste numa variante a solo do típico jogo de batalha naval: neste caso, o objetivo é que o jogador encontre toda a frota de barcos inimiga. No tabuleiro de jogo apenas é conhecido o nº de posições ocupadas em cada linha e coluna do tabuleiro. Pode também ser dado como pistas informação acerca do estado prévio de algumas posições do tabuleiro.
+
+Numa abordagem inicial, decidimos modelar a solução ao problema como uma equação de matrizes de valor binário.
+Isto é, representamos o nosso tabuleiro-solução como uma matriz de zeros e uns, onde cada entrada terá valor 0 se corresponder a uma água, ou 1 caso contrário.
+Desta forma poderíamos considerar o tabuleiro-solução como dado por uma equação linear de todas as possíveis matrizes contendo cada uma delas uma único barco de tamanho um a 4. As matrizes que participam na solução final (ou seja, que contêm um barco que está no tabuleiro) são multiplicadas a 1, e as restantes por zero, sendo assim _descartadas_.
+
+
+Todavia decidimos colocar esta implementação em pausa devido a dificuldades que tivemos em colocá la em funcionamento. Procurámos então seguir uma abordagem diferente.
+
+Desta vez, recebemos as posições ocupadas por linha e coluna, e ao recebermos _pistas_ de barcos imediatamente inferimos que as posições adjacentes terão que ser _água_.
+
+De seguida executamos uma procura em profundidade procurando colocar os barcos por ordem decrescente de tamanho.
+
+A cada nó da procura fazemos corresponder um tabuleiro num determinado estado, com a raíz da árvore o tabuleiro com as pistas e inferências.
+
+Para cada posição possível do tabuleiro verificamos se é possível colocar o próximo barco de maior tamanho que falta colocar, tanto na vertical como na horizontal. 
+
+As ações possíveis em cada nó consistem numa lista de todas estas possibilidades.
+
+A nossa verificação de se um barco
